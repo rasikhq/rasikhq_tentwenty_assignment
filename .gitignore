@@ -1,0 +1,10 @@
+# Secrets: the TMDb token lives in .env and is never committed
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# OS
+.DS_Store
