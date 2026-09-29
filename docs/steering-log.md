@@ -23,3 +23,15 @@ Agent then recommended showing cached upcoming movies as "Coming soon" rows, ste
 ### Framework
 
 Agent recommended bare React Native CLI 0.87 without Expo (the only option meeting every brief constraint literally), steered to Expo SDK 55 instead because: I would not drop Expo. The feature build relies on something Expo helps with (`expo-image`'s disk cache for offline posters), and adding Expo later over bare React Native isn't feasible without hitting the same iOS 16.4 floor, so SDK 55 keeps both Expo and iOS 15.
+
+### Hall layout
+
+Agent recommended one hall definition, with unavailable seats derived from the movie id, steered to keeping the seat layout per hall and availability per showtime instead because: my instinct for edge cases asked whether halls always share a layout. A movie can play in different halls with different layouts, so the layout belongs to the hall and availability to the showtime, and the seat map scales to many halls without changing.
+
+### Seat rendering (claim corrected)
+
+Agent recommended one memoized view per seat over SVG, arguing that SVG shapes each need their own touch handling. I questioned that claim, since SVG is what I generally consider, and raised the caveat of blurry looks. The claim was wrong: `react-native-svg` shapes take `onPress` directly. Views stayed for per-seat accessibility labels and NativeWind styling, and zoom works by re-laying out seats at the new size so they stay sharp.
+
+### Seat map in landscape
+
+Agent recommended splitting the seat map in landscape (hall on the left; legend, chips, total and button in a right-hand panel), steered to keeping the same layout and just scaling it instead because: a consistent layout is more natural, and splitting the view that way might not be the best to look at.
