@@ -14,6 +14,7 @@ import { useIsOnline } from '../hooks/useIsOnline';
 import { useUpcomingMovies } from '../hooks/useUpcomingMovies';
 import { errorMessage } from '../lib/errorMessage';
 import { useColumnCount } from '../lib/layout';
+import { recheckConnection } from '../lib/nativeManagers';
 
 // FlashList reports the movies on screen only after they've been there for 250 ms by default. Tracking the
 // first one is cheap, so it reports at once
@@ -45,6 +46,9 @@ export function MovieListScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   async function refresh() {
+    // Offline, the refetch waits for a connection. The spinner would turn until then, over movies
+    // the offline banner has already said are saved ones.
+    if (!isOnline) return;
     setIsRefreshing(true);
     await refetch();
     setIsRefreshing(false);
@@ -104,7 +108,11 @@ export function MovieListScreen() {
       <ErrorState
         title="You're offline"
         message="Connect to the internet to load upcoming movies."
-        onRetry={() => void refetch()}
+        // The connection may have returned without the app hearing of it, so Retry checks it again
+        onRetry={() => {
+          void recheckConnection();
+          void refetch();
+        }}
       />
     );
   } else if (error) {

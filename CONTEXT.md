@@ -4,6 +4,22 @@ An app that lists upcoming movies from TMDb, shows their details and trailers, f
 
 ## Language
 
+### App
+
+**Movie list**:
+The screen the app opens on: the upcoming movies as large cards under the Watch header.
+_Avoid_: Home, feed, Watch screen
+
+**Saved movies**:
+The movies the app kept on the device from its last successful load, shown when TMDb can't be reached.
+_Avoid_: Cached movies, offline movies
+
+**Offline banner**:
+A slim note above saved movies saying the user is offline and the screen shows saved movies.
+
+**Offline state**:
+The full-screen message, with Retry, shown offline when there are no saved movies to show.
+
 ### Movies
 
 **Genre**:

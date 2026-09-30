@@ -15,8 +15,11 @@
 
 ## Decisions made while building
 
-- Persistence lives in `createPersistOptions()` (`src/lib/queryClient.ts`), one persister per mounted app. `shouldPersist` is the single place later tickets add their queries; `trimForDisk` cuts the upcoming list to 3 pages.
-- The cache-buster is the `version` in `app.json` (through expo-constants).
-- Offline with nothing saved is detected as a paused query (`fetchStatus === 'paused'` with no data), since TanStack Query waits for a connection instead of failing.
-- Backdrops use `cachePolicy="disk"` explicitly (expo-image's default) so the offline promise is visible in code. The disk image cache is native and not covered by a Jest test.
-- Tests fake the date with `controlDate()` (`src/test/clock.ts`), which lets the real timers run.
+- Persistence lives in `createPersistOptions()` (`src/lib/queryClient.ts`), one persister per mounted app. `shouldPersist` is the single place later tickets add their queries; `trimForDisk` cuts the upcoming list to 3 pages. A query whose refetch failed still persists its last data.
+- The persister dates a saved copy by its oldest data, not by the moment of writing, so reopening the app doesn't restart the 7 days. Writes are throttled to 300 ms, so a write lost on closing the app is unlikely.
+- The cache-buster is the `version` in `app.json` (through expo-constants). The app throws if it is missing, rather than running without a buster.
+- `staleTime` of 1 hour belongs to the upcoming list query. Other queries set their own (24 hours for a detail, 7 days for genres). `gcTime` is global, at the persister's max age.
+- Online means NetInfo reports a connection and not `isInternetReachable === false`, so Wi-Fi without internet counts as offline.
+- Offline with nothing saved is detected as a paused query (`fetchStatus === 'paused'` with no data), since TanStack Query waits for a connection instead of failing. Retry there asks NetInfo to check again. Pulling the list down while offline does nothing, instead of spinning until the connection returns.
+- Backdrops use `cachePolicy="memory-disk"`. The disk image cache is native and not covered by a Jest test: check on a device.
+- Tests fake the date with `controlDate()` (`src/test/clock.ts`), which lets the real timers run, and fake NetInfo's `addEventListener` and `refresh` on top of its official mock, which reports nothing. Jest's `expo-constants` is `app.json`.

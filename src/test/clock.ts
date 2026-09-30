@@ -1,3 +1,5 @@
+import { DAY, HOUR } from '../lib/duration';
+
 // Everything but the date stays real, so waitFor, timers and the network keep running. The date still
 // ticks on with real time, which the persister's write throttle relies on.
 const realTimers = [
@@ -24,5 +26,10 @@ export function controlDate() {
 
 /** Moves the date forward by this many hours. */
 export function passHours(hours: number) {
-  jest.setSystemTime(Date.now() + hours * 60 * 60 * 1000);
+  jest.setSystemTime(Date.now() + hours * HOUR);
+}
+
+/** Moves the date forward by this many days. */
+export function passDays(days: number) {
+  jest.setSystemTime(Date.now() + days * DAY);
 }

@@ -18,3 +18,9 @@ export async function pullToRefresh(list: TestInstance) {
     onRefresh();
   });
 }
+
+/** Whether the list shows its pull-to-refresh spinner. */
+export function isRefreshing(list: TestInstance) {
+  const refreshControl = list.props.refreshControl as ReactElement<{ refreshing?: boolean }> | undefined;
+  return refreshControl?.props.refreshing === true;
+}

@@ -2,6 +2,7 @@ import { useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
 
 import { fetchUpcomingMovies } from '../api/movies';
 import type { Movie, Paged } from '../api/types';
+import { HOUR } from '../lib/duration';
 import { queryKeys } from '../lib/queryKeys';
 
 // TMDb's pages overlap: movies at the end of one page come back at the start of the next. A movie
@@ -26,6 +27,9 @@ export function useUpcomingMovies() {
     initialPageParam: 1,
     getNextPageParam: (lastPage, _pages, lastPageParam) =>
       lastPageParam < lastPage.totalPages ? lastPageParam + 1 : undefined,
+    // Older than this, the list refetches when the app returns to the foreground, when the connection
+    // comes back and when the app reopens
+    staleTime: HOUR,
     select: selectMovies,
   });
 }

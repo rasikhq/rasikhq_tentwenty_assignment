@@ -18,8 +18,8 @@ export function MovieCard({ movie }: { movie: Movie }) {
         <Image
           source={imageUrl(movie.backdropPath, 'card')}
           contentFit="cover"
-          // Saved on disk, so a backdrop seen once still shows offline
-          cachePolicy="disk"
+          // Kept in memory and on disk, so a backdrop seen once still shows offline
+          cachePolicy="memory-disk"
           // The list recycles cards, so a recycled one must not show the movie it held before
           recyclingKey={String(movie.id)}
           style={StyleSheet.absoluteFill}

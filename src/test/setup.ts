@@ -8,10 +8,15 @@ import { TEST_TOKEN } from './tmdb';
 import { resetWindow } from './window';
 
 // Native modules have no native side in Jest, so each one gets its library's official mock as it arrives
-jest.mock(
-  'react-native-safe-area-context',
-  () => jest.requireActual<{ default: unknown }>('react-native-safe-area-context/jest/mock').default,
+jest.mock('react-native-safe-area-context', () =>
+  jest.requireActual<{ default: unknown }>('react-native-safe-area-context/jest/mock').default,
 );
+
+// Jest has no native manifest, so the Expo config is app.json itself, which is where the app version lives
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: { expoConfig: jest.requireActual<{ expo: object }>('../../app.json').expo },
+}));
 
 // The disk and the connection are faked at their libraries' own Jest mocks
 jest.mock('@react-native-async-storage/async-storage', () =>
