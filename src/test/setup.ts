@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { timeoutManager } from '@tanstack/react-query';
 import { cleanup } from '@testing-library/react-native';
+import type * as ReactNative from 'react-native';
 
 import { resetNetwork } from './network';
 import { server } from './server';
@@ -25,6 +26,13 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 jest.mock('@react-native-community/netinfo', () =>
   jest.requireActual<object>('@react-native-community/netinfo/jest/netinfo-mock.js'),
 );
+
+// PROTOTYPE (ticket 06): react-native-webview ships no Jest mock, and the harness screen imports it at
+// load time through the root navigator. A bare View stands in for it on this branch only.
+jest.mock('react-native-webview', () => {
+  const { View } = jest.requireActual<typeof ReactNative>('react-native');
+  return { __esModule: true, WebView: View, default: View };
+});
 
 // Jest has no layout pass, so FlashList measures nothing and renders no rows. This fixes the sizes it
 // measures, as FlashList's own tests do. Its shipped jestSetup.js can't be used: in 2.0.2 it swaps
