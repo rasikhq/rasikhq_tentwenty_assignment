@@ -48,7 +48,8 @@
             "targetSdkVersion": 36
           }
         }
-      ]
+      ],
+      "expo-image"
     ]
   }
 }
