@@ -35,3 +35,9 @@ Agent recommended one memoized view per seat over SVG, arguing that SVG shapes e
 ### Seat map in landscape
 
 Agent recommended splitting the seat map in landscape (hall on the left; legend, chips, total and button in a right-hand panel), steered to keeping the same layout and just scaling it instead because: a consistent layout is more natural, and splitting the view that way might not be the best to look at.
+
+## 2026-09-30 — Ticket 08 (search)
+
+### Icons
+
+Agent drew the search icon as its own component (`Magnifier`) but left other icons inline in the components that use them, such as the "X" in the search field, steered to turning every icon into a re-usable component under `components/icons` instead because: the Magnifier was correctly made a component, since we avoided yet another dependency for icons just because we need a couple or more (noted as such: in a real app with a lot of icons, a proper icon set or library would be used). However, some "icons" were still inline and should be correctly turned into re-usable components, one example being the "X" in search. Putting these under `components/icons` is a small improvement, a split from the usual components.

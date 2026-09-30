@@ -1,6 +1,6 @@
 import { Pressable } from 'react-native';
 
-import { Magnifier } from './Magnifier';
+import { Magnifier } from './icons/Magnifier';
 
 /** The header's search button. */
 export function SearchButton({ onPress }: { onPress: () => void }) {

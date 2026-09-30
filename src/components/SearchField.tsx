@@ -1,6 +1,7 @@
 import { Pressable, TextInput, View } from 'react-native';
 
-import { Magnifier } from './Magnifier';
+import { Cross } from './icons/Cross';
+import { Magnifier } from './icons/Magnifier';
 
 type SearchFieldProps = {
   value: string;
@@ -38,9 +39,7 @@ export function SearchField({ value, onChangeText, onClose }: SearchFieldProps) 
         onPress={hasText ? () => onChangeText('') : onClose}
         className="h-12 w-12 items-center justify-center rounded-full active:opacity-80"
       >
-        {/* A cross: two bars, turned to cross at their middles */}
-        <View className="absolute h-0.5 w-4 rotate-45 bg-ink" />
-        <View className="absolute h-0.5 w-4 -rotate-45 bg-ink" />
+        <Cross />
       </Pressable>
     </View>
   );

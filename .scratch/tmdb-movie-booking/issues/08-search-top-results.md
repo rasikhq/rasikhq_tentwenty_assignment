@@ -35,7 +35,7 @@
 - Top Results is a FlashList in one column, and two above the wide breakpoint, like Movie list. The list is keyed by column count and term, so a new term opens at its first result.
 - Tapping a row puts the keyboard away before opening Movie detail. On Android the field kept its focus and the keyboard stayed up over the detail.
 - `Screen` now takes a `header` slot instead of a `title`: Movie list passes the "Watch" title and the search button, Search passes the search field.
-- The search icon, the field's cross and the header's search button are drawn from views (`Magnifier`, `SearchField`, `SearchButton`), as the back and close buttons are. No icon library was added.
+- Icons are drawn from views and no icon library was added, because the app has three icons. After the first commit the user steered every icon into its own component under `src/components/icons/` (see the steering log): `Magnifier`, `Cross` (ink, or white with `onDark`) and `ChevronLeft`. The search field and the trailer's close button share `Cross`, which makes the field's cross 20 wide where it was 16, and the back button uses `ChevronLeft`.
 - The field's keyboard key reads "search" and does nothing yet: ticket 09 opens Results from it.
 - The idle prompt is "Find a movie / Search for a movie by its title." until ticket 12 replaces it with the genre grid.
 - Glossary: `CONTEXT.md` gains Search, Search term, Top Results and Genre list.
