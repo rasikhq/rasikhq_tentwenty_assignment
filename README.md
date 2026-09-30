@@ -16,7 +16,9 @@ Every screen has a loading skeleton, an empty state, an error state with Retry, 
 
 ## Demo
 
-[demo/demo.mp4](demo/demo.mp4) is the screen recording (about 3 minutes, no sound): the Android build in portrait beside the iOS build in landscape.
+https://github.com/user-attachments/assets/9083b8fa-4271-4b54-95cb-84309a34db80
+
+The screen recording (about 3 minutes, no sound): the Android build in portrait beside the iOS build in landscape. The player above shows a smaller copy, because GitHub doesn't play a video file from a repository. The full-quality file is [demo/demo.mp4](demo/demo.mp4).
 
 The installable builds are attached to the GitHub release [v1.0.0](https://github.com/rasikhq/rasikhq_tentwenty_assignment/releases/tag/v1.0.0), and [demo/README.md](demo/README.md) links to it and says how to install them and what was checked with them:
 

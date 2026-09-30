@@ -2,7 +2,9 @@
 
 ## Screen recording
 
-[`demo.mp4`](demo.mp4) (3 minutes 13 seconds, no sound) shows the two release builds side by side: the APK on the Pixel 9 Pro emulator in portrait, and the iOS build on the iPhone 16 simulator (iOS 18.5) in landscape. It goes through Movie list, Movie detail, the trailer, the seat map with a selection and its summary, the genre grid, a genre's Results, and Top Results for a search.
+https://github.com/user-attachments/assets/9083b8fa-4271-4b54-95cb-84309a34db80
+
+[`demo.mp4`](demo.mp4) (3 minutes 13 seconds, no sound) shows the two release builds side by side: the APK on the Pixel 9 Pro emulator in portrait, and the iOS build on the iPhone 16 simulator (iOS 18.5) in landscape. It goes through Movie list, Movie detail, the trailer, the seat map with a selection and its summary, the genre grid, a genre's Results, and Top Results for a search. GitHub doesn't play a video file from a repository, so the player above shows a smaller copy (1440 pixels wide, 30 frames a second), and `demo.mp4` is the full-quality file to download.
 
 # Release Builds
 
