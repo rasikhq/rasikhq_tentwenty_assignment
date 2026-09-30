@@ -1,4 +1,5 @@
 import { screen, userEvent, waitForElementToBeRemoved } from '@testing-library/react-native';
+import { StyleSheet, type ViewStyle } from 'react-native';
 
 import { controlDate } from '../test/clock';
 import { renderApp } from '../test/renderApp';
@@ -46,6 +47,13 @@ function availableSeats() {
 function placeOf(seat: ReturnType<typeof availableSeats>[number]) {
   const [, row, number] = /^Row (\d+), seat (\d+),/.exec(seat.props.accessibilityLabel as string)!;
   return { row, number };
+}
+
+/** How wide a seat is laid out with the space around it, in dp. It is as tall as it is wide. */
+function sizeOf(seat: ReturnType<typeof availableSeats>[number]) {
+  const { width, height } = StyleSheet.flatten(seat.props.style as ViewStyle);
+  expect(height).toBe(width);
+  return width as number;
 }
 
 /** The seats of the hall that someone else already has, in the hall's order. */
@@ -281,4 +289,108 @@ test('turning the phone keeps the selection', async () => {
   expect(screen.getByRole('button', { name: new RegExp(`^Row ${row}, seat ${number},`) })).toBeSelected();
   expect(screen.getByText(`${number} / ${row} row`)).toBeOnTheScreen();
   expect(screen.getByText('$50')).toBeOnTheScreen();
+});
+
+test('the hall starts at fit: Zoom out is disabled and Zoom in is ready', async () => {
+  await openSeatMap();
+
+  expect(screen.getByRole('button', { name: 'Zoom out' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Zoom in' })).toBeEnabled();
+});
+
+test('Zoom in lays the seats out at 1.5 times their size at fit, then at 2.25 times, and is disabled at that largest level', async () => {
+  const user = await openSeatMap();
+  const [seat] = availableSeats();
+  // The 390 dp window, less a 16 dp margin and a 16 dp row number on each side, across Hall 1's 24 slots
+  expect(sizeOf(seat)).toBeCloseTo(326 / 24);
+
+  await user.press(screen.getByRole('button', { name: 'Zoom in' }));
+
+  expect(sizeOf(seat)).toBeCloseTo((326 / 24) * 1.5);
+  expect(screen.getByRole('button', { name: 'Zoom in' })).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Zoom out' })).toBeEnabled();
+
+  await user.press(screen.getByRole('button', { name: 'Zoom in' }));
+
+  expect(sizeOf(seat)).toBeCloseTo((326 / 24) * 2.25);
+  expect(screen.getByRole('button', { name: 'Zoom in' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Zoom out' })).toBeEnabled();
+});
+
+test('Zoom out steps back through the levels and is disabled again at fit', async () => {
+  const user = await openSeatMap();
+  const [seat] = availableSeats();
+  await user.press(screen.getByRole('button', { name: 'Zoom in' }));
+  await user.press(screen.getByRole('button', { name: 'Zoom in' }));
+
+  await user.press(screen.getByRole('button', { name: 'Zoom out' }));
+
+  expect(sizeOf(seat)).toBeCloseTo((326 / 24) * 1.5);
+  expect(screen.getByRole('button', { name: 'Zoom in' })).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Zoom out' })).toBeEnabled();
+
+  await user.press(screen.getByRole('button', { name: 'Zoom out' }));
+
+  expect(sizeOf(seat)).toBeCloseTo(326 / 24);
+  expect(screen.getByRole('button', { name: 'Zoom out' })).toBeDisabled();
+});
+
+test('seats stay pressable after zooming, and zooming keeps the selection', async () => {
+  const user = await openSeatMap();
+  const [first, second] = availableSeats();
+  const { row, number } = placeOf(first);
+  await user.press(screen.getByRole('button', { name: 'Zoom in' }));
+
+  await user.press(first);
+
+  expect(first).toBeSelected();
+  expect(screen.getByText(`${number} / ${row} row`)).toBeOnTheScreen();
+
+  await user.press(screen.getByRole('button', { name: 'Zoom in' }));
+  await user.press(second);
+  await user.press(screen.getByRole('button', { name: 'Zoom out' }));
+
+  expect(first).toBeSelected();
+  expect(second).toBeSelected();
+  expect(screen.getByText('$100')).toBeOnTheScreen();
+});
+
+test('in a window wide enough for full-size seats at fit, one zoom in reaches the largest seats', async () => {
+  await rotateToLandscape();
+  const user = await openSeatMap();
+  const [seat] = availableSeats();
+  // The 844 dp window has room for slots of 32.5 dp, and a slot at fit stops at 32
+  expect(sizeOf(seat)).toBe(32);
+  expect(screen.getByRole('button', { name: 'Zoom out' })).toBeDisabled();
+
+  await user.press(screen.getByRole('button', { name: 'Zoom in' }));
+
+  // 1.5 times fit, which is also the largest a slot gets, so there is no level above it
+  expect(sizeOf(seat)).toBe(48);
+  expect(screen.getByRole('button', { name: 'Zoom in' })).toBeDisabled();
+
+  await user.press(screen.getByRole('button', { name: 'Zoom out' }));
+
+  expect(sizeOf(seat)).toBe(32);
+  expect(screen.getByRole('button', { name: 'Zoom out' })).toBeDisabled();
+});
+
+test('turning the phone works the zoom levels out again for the new width', async () => {
+  const user = await openSeatMap();
+  const [seat] = availableSeats();
+  await user.press(screen.getByRole('button', { name: 'Zoom in' }));
+  await user.press(screen.getByRole('button', { name: 'Zoom in' }));
+  expect(sizeOf(seat)).toBeCloseTo((326 / 24) * 2.25);
+
+  await rotateToLandscape();
+
+  // Still at the largest level, which is now the second of two
+  expect(sizeOf(seat)).toBe(48);
+  expect(screen.getByRole('button', { name: 'Zoom in' })).toBeDisabled();
+
+  await user.press(screen.getByRole('button', { name: 'Zoom out' }));
+
+  expect(sizeOf(seat)).toBe(32);
+  expect(screen.getByRole('button', { name: 'Zoom out' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Zoom in' })).toBeEnabled();
 });

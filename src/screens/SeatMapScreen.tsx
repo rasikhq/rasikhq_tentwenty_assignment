@@ -6,15 +6,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '../components/BackButton';
 import { Button } from '../components/Button';
-import { HallView } from '../components/HallView';
+import { HallView, slotSizeToFit } from '../components/HallView';
 import { Screen } from '../components/Screen';
 import { SeatChip } from '../components/SeatChip';
 import { SeatLegend } from '../components/SeatLegend';
 import { SelectionSummary } from '../components/SelectionSummary';
 import { Text } from '../components/Text';
 import { Toast } from '../components/Toast';
+import { ZOOM_CONTROLS_ROOM, ZoomControls } from '../components/ZoomControls';
 import { HALLS } from '../data/halls';
+import { useKeepCentre } from '../hooks/useKeepCentre';
 import { MAX_SELECTION, useSelection } from '../hooks/useSelection';
+import { useZoom } from '../hooks/useZoom';
 import { formatDate } from '../lib/dates';
 import { layOutHall, SEAT_TYPES, seatsOf } from '../lib/hall';
 import { WIDE_BREAKPOINT } from '../lib/layout';
@@ -38,6 +41,14 @@ export function SeatMapScreen({ route, navigation }: NativeStackScreenProps<Root
   // the screen is open, so the seats keep their identity and only a changed seat renders again.
   const rows = useMemo(() => layOutHall(hall), [hall]);
   const unavailableIds = useMemo(() => unavailableSeatIds(showtime, seatsOf(rows)), [showtime, rows]);
+  // The hall area's width is measured. Until its first layout it is worked out from the window, which
+  // gives the same width, so the first frame is already right. Jest has no layout pass and stays on this.
+  const [measuredWidth, setMeasuredWidth] = useState<number>();
+  const hallAreaWidth = measuredWidth ?? window.width - insets.left - insets.right;
+  const zoom = useZoom(slotSizeToFit(rows, hallAreaWidth - 2 * HALL_MARGIN));
+  // A scroll view scrolls one way, so the hall sits in two, one inside the other
+  const scrollDown = useKeepCentre('y');
+  const scrollAcross = useKeepCentre('x');
   const selectedIds = useMemo(() => new Set(selection.seats.map((seat) => seat.id)), [selection.seats]);
   const total = selection.seats.reduce((sum, seat) => sum + SEAT_TYPES[seat.seatType].price, 0);
   // A wide window has room beside things, and a phone on its side has no height to spare: either way
@@ -93,20 +104,41 @@ export function SeatMapScreen({ route, navigation }: NativeStackScreenProps<Root
     >
       {/* Movie detail, under this screen, may have turned the status bar's icons light for its image */}
       <StatusBar style="dark" />
-      {/* The hall takes the height the rest leaves. A hall taller than that scrolls inside it, so the page never does. */}
-      <View className="flex-1">
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12 }}
-        >
-          <HallView
-            rows={rows}
-            width={window.width - insets.left - insets.right - 2 * HALL_MARGIN}
-            unavailableIds={unavailableIds}
-            selectedIds={selectedIds}
-            onToggleSeat={selection.toggle}
-          />
+      {/*
+        The hall takes the height the rest leaves, and scrolls inside it both ways, so the page never
+        scrolls. A hall smaller than its area sits in the middle of it.
+      */}
+      <View className="flex-1" onLayout={(event) => setMeasuredWidth(event.nativeEvent.layout.width)}>
+        <ScrollView {...scrollDown} contentContainerStyle={{ flexGrow: 1 }}>
+          <ScrollView
+            {...scrollAcross}
+            horizontal
+            contentContainerStyle={{
+              flexGrow: 1,
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingHorizontal: HALL_MARGIN,
+              paddingTop: 12,
+              // The last row scrolls clear of the zoom controls
+              paddingBottom: ZOOM_CONTROLS_ROOM,
+            }}
+          >
+            <HallView
+              rows={rows}
+              slotSize={zoom.slotSize}
+              unavailableIds={unavailableIds}
+              selectedIds={selectedIds}
+              onToggleSeat={selection.toggle}
+            />
+          </ScrollView>
         </ScrollView>
-        {/* Over the bottom of the hall. A new key for each refusal starts the toast again. */}
+        <ZoomControls
+          canZoomOut={zoom.canZoomOut}
+          canZoomIn={zoom.canZoomIn}
+          onZoomOut={zoom.zoomOut}
+          onZoomIn={zoom.zoomIn}
+        />
+        {/* Over the bottom of the hall, above the zoom controls. A new key for each refusal starts the toast again. */}
         {selection.refusals > 0 && (
           <Toast key={selection.refusals} message={`You can pick up to ${MAX_SELECTION} seats`} />
         )}

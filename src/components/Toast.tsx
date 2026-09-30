@@ -9,8 +9,9 @@ const FADE_OUT = 300;
 
 /**
  * A brief message over the bottom of its parent: it fades in, stays, fades out and is gone. It lies
- * over the content and takes no touches, so nothing moves when it comes or goes. To show it again,
- * the parent renders it with a new `key`.
+ * over the content and takes no touches, so nothing moves when it comes or goes. It sits clear of
+ * controls at the parent's bottom edge, such as the seat map's zoom controls. To show it again, the
+ * parent renders it with a new `key`.
  */
 export function Toast({ message }: { message: string }) {
   const [opacity] = useState(() => new Animated.Value(0));
@@ -33,7 +34,7 @@ export function Toast({ message }: { message: string }) {
   if (isGone) return null;
 
   return (
-    <View pointerEvents="none" className="absolute bottom-3 left-5 right-5 items-center">
+    <View pointerEvents="none" className="absolute bottom-16 left-5 right-5 items-center">
       <Animated.View style={{ opacity }}>
         <View className="rounded-full bg-navy px-4 py-2">
           <Text variant="toast">{message}</Text>
