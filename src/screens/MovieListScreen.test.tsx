@@ -61,7 +61,7 @@ test('while the next page loads, Movie List shows a placeholder card below the m
   expect(screen.queryByLabelText('Loading more movies')).not.toBeOnTheScreen();
 });
 
-test('when the next page fails, Movie List keeps its movies and offers Retry below them', async () => {
+test('when the next page fails, Movie List keeps its movies and offers Retry below them, which loads the page', async () => {
   const firstPage = fullPage();
   serveUpcoming([firstPage, [tmdbMovie({ title: 'Closing Night' })]], { failPages: { 2: 500 } });
   const user = userEvent.setup();
@@ -71,11 +71,17 @@ test('when the next page fails, Movie List keeps its movies and offers Retry bel
   expect(await screen.findByText("Couldn't load more movies")).toBeOnTheScreen();
   expect(screen.getByText('Opening 20')).toBeOnTheScreen();
 
-  serveUpcoming([firstPage, [tmdbMovie({ title: 'Closing Night' })]]);
+  const retried = gate();
+  serveUpcoming([firstPage, [tmdbMovie({ title: 'Closing Night' })]], { hold: { 2: retried.opened } });
   await user.press(screen.getByRole('button', { name: 'Retry' }));
 
-  expect(await screen.findByText('Closing Night')).toBeOnTheScreen();
+  expect(await screen.findByLabelText('Loading more movies')).toBeOnTheScreen();
   expect(screen.queryByText("Couldn't load more movies")).not.toBeOnTheScreen();
+
+  retried.open();
+
+  expect(await screen.findByText('Closing Night')).toBeOnTheScreen();
+  expect(screen.queryByLabelText('Loading more movies')).not.toBeOnTheScreen();
 });
 
 test('Movie List keeps its movies when the phone rotates to landscape', async () => {

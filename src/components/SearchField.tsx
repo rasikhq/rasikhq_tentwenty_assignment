@@ -6,8 +6,8 @@ import { Magnifier } from './icons/Magnifier';
 type SearchFieldProps = {
   value: string;
   onChangeText: (text: string) => void;
-  /** The keyboard's search key was pressed. */
-  onSubmit: () => void;
+  /** The keyboard's search key was pressed, with the text the field held at that moment. */
+  onSubmit: (text: string) => void;
   /** Leaves Search. The field's button does this when there is no text to clear. */
   onClose: () => void;
 };
@@ -31,7 +31,9 @@ export function SearchField({ value, onChangeText, onSubmit, onClose }: SearchFi
         autoCapitalize="none"
         autoCorrect={false}
         returnKeyType="search"
-        onSubmitEditing={onSubmit}
+        // The field's own text, because a key pressed right after the last letter arrives before React
+        // has rendered that letter into `value`
+        onSubmitEditing={(event) => onSubmit(event.nativeEvent.text)}
         // A font size without the line height of text-sm, which iOS adds below the text of an input.
         // Android pads an input by itself, which would push the text off centre.
         className="flex-1 px-3 py-0 font-poppins text-[14px] text-ink placeholder:text-grey"

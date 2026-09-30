@@ -1,6 +1,6 @@
 import { screen, userEvent, waitFor } from '@testing-library/react-native';
 
-import { SEARCH_DEBOUNCE_MS } from '../hooks/useMovieSearch';
+import { SEARCH_DEBOUNCE_MS } from '../hooks/useTopResults';
 import { controlDate, passDays } from '../test/clock';
 import { letDiskSettle } from '../test/disk';
 import { goOffline, goOnline } from '../test/network';

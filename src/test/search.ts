@@ -1,4 +1,4 @@
-import { SEARCH_DEBOUNCE_MS } from '../hooks/useMovieSearch';
+import { SEARCH_DEBOUNCE_MS } from '../hooks/useTopResults';
 
 /**
  * Waits longer than Search pauses after the last keystroke, so any request the app was going to send has

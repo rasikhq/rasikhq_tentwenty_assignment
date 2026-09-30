@@ -1,5 +1,6 @@
 import { screen, userEvent } from '@testing-library/react-native';
 
+import { letDiskSettle } from '../test/disk';
 import { goOffline, goOnline } from '../test/network';
 import { renderApp } from '../test/renderApp';
 import { letSearchSettle } from '../test/search';
@@ -17,6 +18,20 @@ async function submitSearch(text: string) {
   await renderApp({ name: 'Search' });
   await user.type(screen.getByPlaceholderText('Search movies'), text, { submitEditing: true });
   return user;
+}
+
+/** Opens the app on Search, types into its field and waits for Top Results. */
+async function openTopResults(text: string) {
+  const user = userEvent.setup();
+  await renderApp({ name: 'Search' });
+  await user.type(screen.getByPlaceholderText('Search movies'), text);
+  await screen.findByText('Top Results');
+  return user;
+}
+
+/** Presses the keyboard's search key, with the text the field already has. */
+function pressSearchKey(user: ReturnType<typeof userEvent.setup>) {
+  return user.type(screen.getByPlaceholderText('Search movies'), '', { submitEditing: true });
 }
 
 test('submitting a search opens Results, with how many movies TMDb matched and the first page of them', async () => {
@@ -85,13 +100,9 @@ test('tapping a Results row opens Movie detail with the title from the row befor
 
 test('Results opens with the page Top Results already shows, without asking TMDb for it again', async () => {
   const search = serveSearch({ dune: [tmdbMovie({ title: 'Dune: Part Two' })] });
-  const user = userEvent.setup();
-  await renderApp({ name: 'Search' });
-  const field = screen.getByPlaceholderText('Search movies');
-  await user.type(field, 'Dune');
-  await screen.findByText('Top Results');
+  const user = await openTopResults('Dune');
 
-  await user.type(field, '', { submitEditing: true });
+  await pressSearchKey(user);
 
   expect(screen.getByRole('header', { name: '1 Result Found' })).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Dune: Part Two' })).toBeOnTheScreen();
@@ -138,7 +149,12 @@ test('when the search fails, Results shows an error state, and Retry recovers', 
   expect(screen.getByText('TMDb had a problem. Try again in a moment.')).toBeOnTheScreen();
   expect(screen.getByRole('header', { name: 'Results' })).toBeOnTheScreen();
 
-  serveSearch({ dune: [tmdbMovie({ title: 'Dune: Part Two' })] });
+  // Search, under Results, has waited out its pause by now. The search stays failed until the user retries
+  const search = serveSearch({ dune: [tmdbMovie({ title: 'Dune: Part Two' })] });
+  await letSearchSettle();
+  expect(screen.getByText("Couldn't search for movies")).toBeOnTheScreen();
+  expect(search.queries).toEqual([]);
+
   await user.press(screen.getByRole('button', { name: 'Retry' }));
 
   expect(await screen.findByRole('button', { name: 'Dune: Part Two' })).toBeOnTheScreen();
@@ -162,14 +178,10 @@ test('offline, Results for a term not searched before says search needs a connec
 
 test('offline, Results for a term searched earlier in the session shows its movies under an offline banner', async () => {
   serveSearch({ dune: [tmdbMovie({ title: 'Dune: Part Two' })] });
-  const user = userEvent.setup();
-  await renderApp({ name: 'Search' });
-  const field = screen.getByPlaceholderText('Search movies');
-  await user.type(field, 'Dune');
-  await screen.findByText('Top Results');
+  const user = await openTopResults('Dune');
   await goOffline();
 
-  await user.type(field, '', { submitEditing: true });
+  await pressSearchKey(user);
 
   expect(screen.getByRole('header', { name: '1 Result Found' })).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Dune: Part Two' })).toBeOnTheScreen();
@@ -196,7 +208,7 @@ test('while the next page loads, Results shows a placeholder row below the movie
   expect(screen.queryByLabelText('Loading more results')).not.toBeOnTheScreen();
 });
 
-test('when the next page fails, Results keeps its movies and offers Retry below them', async () => {
+test('when the next page fails, Results keeps its movies and offers Retry below them, which loads the page', async () => {
   const matches = { dune: [fullPage(), [tmdbMovie({ title: 'Dune: Part Two' })]] };
   serveSearch(matches);
   const user = await submitSearch('Dune');
@@ -207,11 +219,17 @@ test('when the next page fails, Results keeps its movies and offers Retry below 
   expect(await screen.findByText("Couldn't load more results")).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Opening 20' })).toBeOnTheScreen();
 
-  serveSearch(matches);
+  const retried = gate();
+  serveSearch(matches, { hold: { dune: retried.opened } });
   await user.press(screen.getByRole('button', { name: 'Retry' }));
 
-  expect(await screen.findByRole('button', { name: 'Dune: Part Two' })).toBeOnTheScreen();
+  expect(await screen.findByLabelText('Loading more results')).toBeOnTheScreen();
   expect(screen.queryByText("Couldn't load more results")).not.toBeOnTheScreen();
+
+  retried.open();
+
+  expect(await screen.findByRole('button', { name: 'Dune: Part Two' })).toBeOnTheScreen();
+  expect(screen.queryByLabelText('Loading more results')).not.toBeOnTheScreen();
 });
 
 test('Results keeps its count and its movies when the phone rotates to landscape', async () => {
@@ -224,4 +242,18 @@ test('Results keeps its count and its movies when the phone rotates to landscape
   expect(await screen.findByRole('button', { name: 'Dune' })).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Dune: Part Two' })).toBeOnTheScreen();
   expect(screen.getByRole('header', { name: '2 Results Found' })).toBeOnTheScreen();
+});
+
+test('Results are not saved: after a restart offline, a search submitted before needs a connection', async () => {
+  serveSearch({ dune: [tmdbMovie({ title: 'Dune: Part Two' })] });
+  await submitSearch('Dune');
+  await screen.findByRole('button', { name: 'Dune: Part Two' });
+  await letDiskSettle();
+  await screen.unmount();
+  await goOffline();
+
+  await submitSearch('Dune');
+
+  expect(await screen.findByText("You're offline")).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: 'Dune: Part Two' })).not.toBeOnTheScreen();
 });

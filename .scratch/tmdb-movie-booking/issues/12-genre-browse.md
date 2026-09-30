@@ -25,6 +25,7 @@
 
 - Results' route params are `{ kind: 'search'; text: string }` (`RootStackParamList` in `src/navigation/RootNavigator.tsx`). A genre is a second kind, such as `{ kind: 'genre'; genre: Genre }`. `ResultsScreen` reads `text` and calls `useSearchResults()` directly, so it needs a branch, or a hook per kind behind one shape (`{ movies, total }`, with the infinite query's paging fields).
 - The header title comes from `resultsTitle(total)` in `ResultsScreen`. A genre shows its name instead.
-- `moviesOnce()` and `nextPageNumber()` in `src/lib/pages.ts` serve any paged movie list, and `toMoviePage()` in `src/api/movies.ts` maps any TMDb movie page.
+- `moviesOnce()` and `nextPageNumber()` in `src/lib/pages.ts` serve any paged movie list, `toMoviePage()` in `src/api/movies.ts` maps any TMDb movie page, and `PagedMovieList` renders one from an infinite query.
+- Search asks TMDb for Top Results only while it is the screen in front (`isInFront` in `useTopResults`). A query Search owns for the genre grid needs no such gate, because the genre list has no debounce.
 - The no-match, error, offline and banner texts in `ResultsScreen` speak of searching. A genre needs its own.
 - `serveSearch()` in `src/test/tmdb.ts` shows how a fake endpoint serves several pages per key.

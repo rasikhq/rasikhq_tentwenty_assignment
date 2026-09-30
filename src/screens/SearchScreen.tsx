@@ -1,4 +1,5 @@
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
+import { useIsFocused } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useState, type ReactNode } from 'react';
 import { Keyboard, View } from 'react-native';
@@ -16,7 +17,7 @@ import { SearchField } from '../components/SearchField';
 import { Text } from '../components/Text';
 import { useGenres } from '../hooks/useGenres';
 import { useIsOnline } from '../hooks/useIsOnline';
-import { useTopResults } from '../hooks/useMovieSearch';
+import { useTopResults } from '../hooks/useTopResults';
 import { errorMessage } from '../lib/errorMessage';
 import { firstGenreName } from '../lib/genres';
 import { useColumnCount } from '../lib/layout';
@@ -27,7 +28,8 @@ export function SearchScreen({ navigation }: NativeStackScreenProps<RootStackPar
   const [text, setText] = useState('');
   const term = normalizeSearchTerm(text);
   // The results for this term and no other: a term without results yet has none to show (ADR-0001)
-  const { data: results, error, refetch } = useTopResults(term);
+  const isInFront = useIsFocused();
+  const { data: results, error, refetch } = useTopResults(term, { isInFront });
   // Rows show without a genre until the genre list arrives, and when it can't be loaded
   const { data: genres } = useGenres();
   const isOnline = useIsOnline();
@@ -112,10 +114,10 @@ export function SearchScreen({ navigation }: NativeStackScreenProps<RootStackPar
     );
   }
 
-  function openResults() {
+  function openResults(submitted: string) {
     // Text with nothing but spaces has no term to search for
-    if (term === '') return;
-    navigation.navigate('Results', { kind: 'search', text: text.trim() });
+    if (normalizeSearchTerm(submitted) === '') return;
+    navigation.navigate('Results', { kind: 'search', text: submitted.trim() });
   }
 
   return (

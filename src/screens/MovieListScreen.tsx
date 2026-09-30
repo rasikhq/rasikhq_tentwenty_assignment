@@ -1,8 +1,7 @@
-import { FlashList, type ListRenderItem } from '@shopify/flash-list';
+import type { ListRenderItem } from '@shopify/flash-list';
 import { useNavigation } from '@react-navigation/native';
-import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Movie } from '../api/types';
 import { EmptyState } from '../components/EmptyState';
@@ -11,35 +10,19 @@ import { MovieCard } from '../components/MovieCard';
 import { MovieListSkeleton } from '../components/MovieListSkeleton';
 import { OfflineBanner } from '../components/OfflineBanner';
 import { OfflineState } from '../components/OfflineState';
+import { PagedMovieList } from '../components/PagedMovieList';
 import { Screen } from '../components/Screen';
 import { SearchButton } from '../components/SearchButton';
 import { Text } from '../components/Text';
 import { useIsOnline } from '../hooks/useIsOnline';
 import { useUpcomingMovies } from '../hooks/useUpcomingMovies';
 import { errorMessage } from '../lib/errorMessage';
-import { useColumnCount } from '../lib/layout';
-
-// FlashList reports the movies on screen only after they've been there for 250 ms by default. Tracking the
-// first one is cheap, so it reports at once
-const viewabilityConfig = { minimumViewTime: 0 };
 
 export function MovieListScreen() {
-  const {
-    data: movies,
-    error,
-    fetchStatus,
-    refetch,
-    hasNextPage,
-    isFetchingNextPage,
-    isFetchNextPageError,
-    fetchNextPage,
-  } = useUpcomingMovies();
+  const upcoming = useUpcomingMovies();
+  const { data: movies, error, fetchStatus, refetch } = upcoming;
   const isOnline = useIsOnline();
-  const insets = useSafeAreaInsets();
-  const columns = useColumnCount();
   const navigation = useNavigation();
-  // The first movie on screen. A new column count starts a new list, which opens at this movie
-  const firstVisibleIndex = useRef(0);
   // The pull-to-refresh spinner belongs to the user's pull, so it doesn't show for a refetch the app starts
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -63,49 +46,20 @@ export function MovieListScreen() {
 
   let content: ReactNode;
   if (movies) {
-    let footer: ReactNode = null;
-    if (isFetchNextPageError) {
-      footer = (
-        <ErrorState
-          inline
-          title="Couldn't load more movies"
-          message={errorMessage(error)}
-          onRetry={() => void fetchNextPage()}
-        />
-      );
-    } else if (isFetchingNextPage) {
-      footer = <MovieListSkeleton label="Loading more movies" rows={1} />;
-    }
-
     content = (
       <>
         {!isOnline && <OfflineBanner message="You're offline. Showing saved movies." />}
-        <FlashList
-          // FlashList keeps the old row sizes when its column count changes, which left a gap between
-          // two cards after rotating, so a new column count starts a new list
-          key={columns}
-          initialScrollIndex={firstVisibleIndex.current}
-          viewabilityConfig={viewabilityConfig}
-          onViewableItemsChanged={({ viewableItems }) => {
-            firstVisibleIndex.current = viewableItems[0]?.index ?? 0;
-          }}
-          accessibilityLabel="Upcoming movies"
-          // The list scrolls under the home indicator, so its end pads by the bottom inset
-          contentContainerStyle={{ padding: 8, paddingBottom: 8 + insets.bottom }}
-          data={movies}
-          renderItem={renderMovie}
-          numColumns={columns}
-          ListEmptyComponent={
-            <EmptyState title="No upcoming movies right now" message="Pull down to check again." />
-          }
-          ListFooterComponent={footer}
+        <PagedMovieList
+          label="Upcoming movies"
+          movies={movies}
+          renderMovie={renderMovie}
+          padding={8}
+          nextPage={upcoming}
+          empty={<EmptyState title="No upcoming movies right now" message="Pull down to check again." />}
+          nextPageSkeleton={<MovieListSkeleton label="Loading more movies" rows={1} />}
+          nextPageErrorTitle="Couldn't load more movies"
           refreshing={isRefreshing}
           onRefresh={() => void refresh()}
-          onEndReached={() => {
-            if (hasNextPage && !isFetchingNextPage && !isFetchNextPageError) {
-              void fetchNextPage();
-            }
-          }}
         />
       </>
     );
