@@ -19,8 +19,12 @@ The screen for one movie: its image and title at once, then the release line, ge
 _Avoid_: Details page, movie page
 
 **Search**:
-The screen for finding a movie by its title, opened from the movie list's search button.
+The screen for finding a movie, by its title or by browsing a genre, opened from the movie list's search button.
 _Avoid_: Search page, finder
+
+**Genre grid**:
+What Search shows before any typing: a tile for each genre in the genre list, with an image from an upcoming movie in that genre. A tile opens Results for its genre.
+_Avoid_: Categories, genre browser
 
 **Search term**:
 What the user typed into Search, once trimmed, lowercased and with each run of spaces collapsed to one. Results belong to the search term they were asked for.
@@ -31,7 +35,7 @@ The movies Search lists while the user types: the first page of matches for the 
 _Avoid_: Suggestions, live results
 
 **Results**:
-The screen a submitted search opens: how many movies match the search term, and every match, with more loading as the user scrolls.
+The screen a submitted search or a genre tile opens. For a search: how many movies match the search term, and every match. For a genre: the genre's name, and every movie in it. More movies load as the user scrolls.
 _Avoid_: Search results screen, results page
 
 **Release line**:

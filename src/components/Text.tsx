@@ -6,6 +6,7 @@ const variants = {
   // Under a header bar's title. Grey, where the Figma's sky blue would be too faint to read on white.
   headerDetail: 'font-poppins-medium text-xs text-grey',
   cardTitle: 'font-poppins-medium text-lg text-white',
+  tileTitle: 'font-poppins-medium text-base text-white',
   heroTitle: 'font-poppins-semibold text-xl text-white',
   heroSubtitle: 'font-poppins text-sm text-white',
   body: 'font-poppins text-sm text-ink',

@@ -3,6 +3,7 @@ import { screen, userEvent, waitFor } from '@testing-library/react-native';
 import { SEARCH_DEBOUNCE_MS } from '../hooks/useTopResults';
 import { controlDate, passDays } from '../test/clock';
 import { letDiskSettle } from '../test/disk';
+import { imagePathsIn } from '../test/images';
 import { goOffline, goOnline } from '../test/network';
 import { renderApp } from '../test/renderApp';
 import { letSearchSettle } from '../test/search';
@@ -21,10 +22,10 @@ beforeEach(() => {
   serveGenres();
 });
 
-/** Opens the app on Movie list and taps its search button. */
-async function openSearchFromMovieList() {
+/** Opens the app on Movie list, which loads these upcoming movies, and taps its search button. */
+async function openSearchFromMovieList(upcoming = [tmdbMovie()]) {
   const user = userEvent.setup();
-  serveUpcoming([[tmdbMovie()]]);
+  serveUpcoming([upcoming]);
   await renderApp();
   await user.press(await screen.findByRole('button', { name: 'Search' }));
   return user;
@@ -38,11 +39,165 @@ async function openSearchAndType(text: string) {
   return user;
 }
 
-test("Movie list's search button opens Search, which asks for a title before any typing", async () => {
+test("Movie list's search button opens Search, which shows a tile for each genre before any typing", async () => {
+  serveGenres([
+    { id: 35, name: 'Comedy' },
+    { id: 80, name: 'Crime' },
+  ]);
+
   await openSearchFromMovieList();
 
   expect(screen.getByPlaceholderText('Search movies')).toBeOnTheScreen();
-  expect(screen.getByText('Search for a movie by its title.')).toBeOnTheScreen();
+  expect(await screen.findByRole('button', { name: 'Comedy' })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Crime' })).toBeOnTheScreen();
+});
+
+test('when TMDb lists no genres, Search asks for a title before any typing', async () => {
+  await openSearchFromMovieList();
+
+  expect(await screen.findByText('Search for a movie by its title.')).toBeOnTheScreen();
+});
+
+test('a genre tile shows the image of an upcoming movie in that genre', async () => {
+  serveGenres([{ id: 878, name: 'Science Fiction' }]);
+
+  await openSearchFromMovieList([
+    tmdbMovie({ backdrop_path: '/wicked.jpg', genre_ids: [18, 14] }),
+    tmdbMovie({ backdrop_path: '/dune.jpg', genre_ids: [12, 878] }),
+  ]);
+
+  await waitFor(() =>
+    expect(imagePathsIn(screen.getByRole('button', { name: 'Science Fiction' }))).toEqual(['/dune.jpg']),
+  );
+});
+
+test('a genre with no upcoming movie gets a colour tile, without an image', async () => {
+  serveGenres([
+    { id: 878, name: 'Science Fiction' },
+    { id: 37, name: 'Western' },
+  ]);
+
+  await openSearchFromMovieList([tmdbMovie({ backdrop_path: '/dune.jpg', genre_ids: [878] })]);
+
+  await waitFor(() =>
+    expect(imagePathsIn(screen.getByRole('button', { name: 'Science Fiction' }))).toEqual(['/dune.jpg']),
+  );
+  expect(imagePathsIn(screen.getByRole('button', { name: 'Western' }))).toEqual([]);
+});
+
+test('genre tiles show different movies where the upcoming movies allow it', async () => {
+  serveGenres([
+    { id: 12, name: 'Adventure' },
+    { id: 878, name: 'Science Fiction' },
+  ]);
+
+  await openSearchFromMovieList([
+    tmdbMovie({ backdrop_path: '/dune.jpg', genre_ids: [12, 878] }),
+    tmdbMovie({ backdrop_path: '/indiana-jones.jpg', genre_ids: [12] }),
+  ]);
+
+  await waitFor(() =>
+    expect(imagePathsIn(screen.getByRole('button', { name: 'Science Fiction' }))).toEqual(['/dune.jpg']),
+  );
+  expect(imagePathsIn(screen.getByRole('button', { name: 'Adventure' }))).toEqual(['/indiana-jones.jpg']);
+});
+
+test('two genres with one upcoming movie between them both show its image', async () => {
+  serveGenres([
+    { id: 12, name: 'Adventure' },
+    { id: 878, name: 'Science Fiction' },
+  ]);
+
+  await openSearchFromMovieList([tmdbMovie({ backdrop_path: '/dune.jpg', genre_ids: [12, 878] })]);
+
+  await waitFor(() =>
+    expect(imagePathsIn(screen.getByRole('button', { name: 'Science Fiction' }))).toEqual(['/dune.jpg']),
+  );
+  expect(imagePathsIn(screen.getByRole('button', { name: 'Adventure' }))).toEqual(['/dune.jpg']);
+});
+
+test('an upcoming movie that carries no genres gives no tile its image', async () => {
+  const user = userEvent.setup();
+  serveGenres([{ id: 878, name: 'Science Fiction' }]);
+  // As a movie saved on the device before list movies carried their genres
+  serveUpcoming([[tmdbMovie({ title: 'Dune', genre_ids: undefined })]]);
+  await renderApp();
+  await screen.findByRole('button', { name: 'Dune' });
+
+  await user.press(screen.getByRole('button', { name: 'Search' }));
+
+  expect(imagePathsIn(await screen.findByRole('button', { name: 'Science Fiction' }))).toEqual([]);
+});
+
+test('while the genre list loads, Search shows placeholder tiles, then the genre grid replaces them', async () => {
+  const answer = gate();
+  serveGenres([{ id: 35, name: 'Comedy' }], { hold: answer.opened });
+
+  await renderApp({ name: 'Search' });
+
+  expect(screen.getByLabelText('Loading genres')).toBeOnTheScreen();
+
+  answer.open();
+
+  expect(await screen.findByRole('button', { name: 'Comedy' })).toBeOnTheScreen();
+  expect(screen.queryByLabelText('Loading genres')).not.toBeOnTheScreen();
+});
+
+test('when the genre list fails to load, Search shows an error state, and Retry recovers', async () => {
+  const user = userEvent.setup();
+  serveGenres([], { fail: 500 });
+  await renderApp({ name: 'Search' });
+  expect(await screen.findByText("Couldn't load genres")).toBeOnTheScreen();
+  expect(screen.getByText('TMDb had a problem. Try again in a moment.')).toBeOnTheScreen();
+
+  serveGenres([{ id: 35, name: 'Comedy' }]);
+  await user.press(screen.getByRole('button', { name: 'Retry' }));
+
+  expect(await screen.findByRole('button', { name: 'Comedy' })).toBeOnTheScreen();
+  expect(screen.queryByText("Couldn't load genres")).not.toBeOnTheScreen();
+});
+
+test('offline with no saved genre list, Search says genres need a connection, and shows them once it is back', async () => {
+  await goOffline();
+
+  await renderApp({ name: 'Search' });
+
+  expect(await screen.findByText("You're offline")).toBeOnTheScreen();
+  expect(screen.getByText('Connect to the internet to browse genres.')).toBeOnTheScreen();
+  expect(screen.queryByLabelText('Loading genres')).not.toBeOnTheScreen();
+
+  serveGenres([{ id: 35, name: 'Comedy' }]);
+  await goOnline();
+
+  expect(await screen.findByRole('button', { name: 'Comedy' })).toBeOnTheScreen();
+  expect(screen.queryByText("You're offline")).not.toBeOnTheScreen();
+});
+
+test('after a restart offline, the genre grid shows from the saved genre list', async () => {
+  serveGenres([{ id: 35, name: 'Comedy' }]);
+  await renderApp({ name: 'Search' });
+  await screen.findByRole('button', { name: 'Comedy' });
+  await letDiskSettle();
+  await screen.unmount();
+  await goOffline();
+
+  await renderApp({ name: 'Search' });
+
+  expect(await screen.findByRole('button', { name: 'Comedy' })).toBeOnTheScreen();
+  expect(screen.queryByText("You're offline")).not.toBeOnTheScreen();
+});
+
+test('typing replaces the genre grid with Top Results, and clearing the text brings the grid back', async () => {
+  serveGenres([{ id: 35, name: 'Comedy' }]);
+  serveSearch({ dune: [tmdbMovie({ title: 'Dune' })] });
+  const user = await openSearchAndType('dune');
+  expect(await screen.findByRole('button', { name: 'Dune' })).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: 'Comedy' })).not.toBeOnTheScreen();
+
+  await user.press(screen.getByRole('button', { name: 'Clear search' }));
+
+  expect(screen.getByRole('button', { name: 'Comedy' })).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: 'Dune' })).not.toBeOnTheScreen();
 });
 
 test('with the search field empty, its button closes Search and returns to Movie list', async () => {

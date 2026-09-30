@@ -112,14 +112,25 @@ export function stallUpcoming() {
   return request;
 }
 
+type ServeGenresOptions = {
+  /** The answer waits until the promise resolves, such as a gate's `opened`. */
+  hold?: Promise<void>;
+  /** The request fails. */
+  fail?: Failure;
+};
+
 /** Serves TMDb's genre list to requests that carry the test token. The result counts the requests that came in. */
-export function serveGenres(genres: TmdbGenre[] = []) {
+export function serveGenres(genres: TmdbGenre[] = [], { hold, fail }: ServeGenresOptions = {}) {
   const served = { requests: 0 };
   server.use(
-    http.get(`${BASE_URL}/genre/movie/list`, ({ request }) => {
+    http.get(`${BASE_URL}/genre/movie/list`, async ({ request }) => {
       served.requests += 1;
+      await hold;
       if (request.headers.get('Authorization') !== `Bearer ${TEST_TOKEN}`) {
         return HttpResponse.json(invalidKey, { status: 401 });
+      }
+      if (fail !== undefined) {
+        return failureResponse(fail);
       }
       const body: TmdbGenreList = { genres };
       return HttpResponse.json(body);
@@ -135,9 +146,23 @@ type ServeSearchOptions = {
   fail?: Record<string, Failure>;
 };
 
-/** Whether a query's matches are given as pages, and not as the movies of its one page. */
-function isPaged(matches: TmdbMovie[] | TmdbMovie[][]): matches is TmdbMovie[][] {
-  return Array.isArray(matches[0]);
+/** The movies a fake paged endpoint serves for one key: those of its one page, or one array per page. */
+type MoviePages = TmdbMovie[] | TmdbMovie[][];
+
+/** Whether the movies are given as pages, and not as the movies of the one page. */
+function isPaged(movies: MoviePages): movies is TmdbMovie[][] {
+  return Array.isArray(movies[0]);
+}
+
+/** TMDb's answer for one page of the movies. */
+function moviePage(movies: MoviePages, page: number): TmdbPage<TmdbMovie> {
+  const pages = isPaged(movies) ? movies : [movies];
+  return {
+    page,
+    results: pages[page - 1] ?? [],
+    total_pages: pages.length,
+    total_results: pages.flat().length,
+  };
 }
 
 /**
@@ -145,10 +170,7 @@ function isPaged(matches: TmdbMovie[] | TmdbMovie[][]): matches is TmdbMovie[][]
  * array per page for a query with several. A query that isn't listed matches no movies. The result lists
  * the query of every request that came in, in order, and the queries whose request the app gave up on.
  */
-export function serveSearch(
-  matches: Record<string, TmdbMovie[] | TmdbMovie[][]>,
-  { hold = {}, fail = {} }: ServeSearchOptions = {},
-) {
+export function serveSearch(matches: Record<string, MoviePages>, { hold = {}, fail = {} }: ServeSearchOptions = {}) {
   const served = { queries: [] as string[], cancelled: [] as string[] };
   server.use(
     http.get(`${BASE_URL}/search/movie`, async ({ request }) => {
@@ -167,15 +189,44 @@ export function serveSearch(
       if (failure !== undefined) {
         return failureResponse(failure);
       }
-      const matched = matches[query] ?? [];
-      const pages = isPaged(matched) ? matched : [matched];
-      const body: TmdbPage<TmdbMovie> = {
-        page,
-        results: pages[page - 1] ?? [],
-        total_pages: pages.length,
-        total_results: pages.flat().length,
-      };
-      return HttpResponse.json(body);
+      return HttpResponse.json(moviePage(matches[query] ?? [], page));
+    }),
+  );
+  return served;
+}
+
+type ServeGenreMoviesOptions = {
+  /** Answers for these genres, by genre id, wait until the promise resolves, such as a gate's `opened`. */
+  hold?: Record<number, Promise<void>>;
+  /** Requests for these genres, by genre id, fail. */
+  fail?: Record<number, Failure>;
+};
+
+/**
+ * Serves TMDb's discover endpoint for the movies of a genre: the movies of each genre id, as the one page
+ * of its movies, or one array per page for a genre with several. A genre that isn't listed has no movies.
+ * The result lists the genre id of every request that came in, in order.
+ */
+export function serveGenreMovies(
+  movies: Record<number, MoviePages>,
+  { hold = {}, fail = {} }: ServeGenreMoviesOptions = {},
+) {
+  const served = { genreIds: [] as number[] };
+  server.use(
+    http.get(`${BASE_URL}/discover/movie`, async ({ request }) => {
+      const params = new URL(request.url).searchParams;
+      const genreId = Number(params.get('with_genres'));
+      const page = Number(params.get('page') ?? 1);
+      served.genreIds.push(genreId);
+      await hold[genreId];
+      if (request.headers.get('Authorization') !== `Bearer ${TEST_TOKEN}`) {
+        return HttpResponse.json(invalidKey, { status: 401 });
+      }
+      const failure = fail[genreId];
+      if (failure !== undefined) {
+        return failureResponse(failure);
+      }
+      return HttpResponse.json(moviePage(movies[genreId] ?? [], page));
     }),
   );
   return served;

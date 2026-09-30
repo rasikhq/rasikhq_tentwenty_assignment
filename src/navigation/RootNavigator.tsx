@@ -1,6 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import type { Movie, Trailer } from '../api/types';
+import type { Genre, Movie, Trailer } from '../api/types';
 import type { Showtime } from '../lib/showtime';
 import { MovieDetailScreen } from '../screens/MovieDetailScreen';
 import { MovieListScreen } from '../screens/MovieListScreen';
@@ -14,9 +14,9 @@ export type RootStackParamList = {
   Search: undefined;
   /**
    * What Results lists, told apart by `kind`: the movies that match a search, with the search as the user
-   * typed it, trimmed. Ticket 12 adds a genre's movies as a second kind.
+   * typed it, trimmed, or the movies of a genre.
    */
-  Results: { kind: 'search'; text: string };
+  Results: { kind: 'search'; text: string } | { kind: 'genre'; genre: Genre };
   /** The movie as the screen that opened it knows it: its image and title show until the detail arrives. */
   MovieDetail: { movie: Movie };
   Trailer: { trailer: Trailer };

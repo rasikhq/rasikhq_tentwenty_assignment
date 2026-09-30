@@ -35,7 +35,7 @@ export function createQueryClient() {
 }
 
 // What reaches the disk: the upcoming list, the detail of every movie the user has opened, and the genre
-// list. Search results stay in memory only (ADR-0001).
+// list. Search results (ADR-0001) and a genre's movies stay in memory only.
 const persistedQueries: readonly unknown[] = [
   queryKeyRoots.upcoming,
   queryKeyRoots.movieDetail,

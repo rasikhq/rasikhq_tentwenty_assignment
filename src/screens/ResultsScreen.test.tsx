@@ -4,7 +4,16 @@ import { letDiskSettle } from '../test/disk';
 import { goOffline, goOnline } from '../test/network';
 import { renderApp } from '../test/renderApp';
 import { letSearchSettle } from '../test/search';
-import { fullPage, gate, serveGenres, serveMovieDetail, serveSearch, tmdbMovie, tmdbMovieDetail } from '../test/tmdb';
+import {
+  fullPage,
+  gate,
+  serveGenreMovies,
+  serveGenres,
+  serveMovieDetail,
+  serveSearch,
+  tmdbMovie,
+  tmdbMovieDetail,
+} from '../test/tmdb';
 import { rotateToLandscape } from '../test/window';
 
 // Search asks TMDb for the genre list as it opens, and Results reads it too
@@ -253,6 +262,122 @@ test('Results are not saved: after a restart offline, a search submitted before 
   await goOffline();
 
   await submitSearch('Dune');
+
+  expect(await screen.findByText("You're offline")).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: 'Dune: Part Two' })).not.toBeOnTheScreen();
+});
+
+const scienceFiction = { id: 878, name: 'Science Fiction' };
+
+/** Opens the app on Search, whose genre grid has Science Fiction, and taps that tile. */
+async function openScienceFiction() {
+  const user = userEvent.setup();
+  serveGenres([scienceFiction]);
+  await renderApp({ name: 'Search' });
+  await user.press(await screen.findByRole('button', { name: 'Science Fiction' }));
+  return user;
+}
+
+test("tapping a genre tile opens Results for that genre, with the genre's name as the header and its movies", async () => {
+  serveGenreMovies({ 878: [tmdbMovie({ title: 'Dune: Part Two' }), tmdbMovie({ title: 'Arrival' })] });
+
+  await openScienceFiction();
+
+  expect(screen.getByRole('header', { name: 'Science Fiction' })).toBeOnTheScreen();
+  expect(await screen.findByRole('button', { name: 'Dune: Part Two' })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Arrival' })).toBeOnTheScreen();
+});
+
+test("scrolling to the end of a genre's Results loads the next page of its movies", async () => {
+  serveGenreMovies({ 878: [fullPage(), [tmdbMovie({ title: 'Dune: Part Two' })]] });
+  const user = await openScienceFiction();
+  const results = await screen.findByLabelText('Results');
+  expect(screen.queryByRole('button', { name: 'Dune: Part Two' })).not.toBeOnTheScreen();
+
+  await user.scrollTo(results, { y: 1100 });
+
+  expect(await screen.findByRole('button', { name: 'Dune: Part Two' })).toBeOnTheScreen();
+  expect(screen.getByRole('header', { name: 'Science Fiction' })).toBeOnTheScreen();
+});
+
+test("back from a genre's Results returns to the genre grid", async () => {
+  serveGenreMovies({ 878: [tmdbMovie({ title: 'Dune: Part Two' })] });
+  const user = await openScienceFiction();
+  await screen.findByRole('button', { name: 'Dune: Part Two' });
+
+  await user.press(screen.getByRole('button', { name: 'Back' }));
+
+  expect(screen.queryByRole('header', { name: 'Science Fiction' })).not.toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Science Fiction' })).toBeOnTheScreen();
+  expect(screen.getByPlaceholderText('Search movies')).toHaveDisplayValue('');
+});
+
+test('a genre with no movies says so on Results', async () => {
+  serveGenreMovies({});
+
+  await openScienceFiction();
+
+  expect(await screen.findByText('No Science Fiction movies right now')).toBeOnTheScreen();
+  expect(screen.getByRole('header', { name: 'Science Fiction' })).toBeOnTheScreen();
+});
+
+test("when a genre's movies fail to load, Results shows an error state, and Retry recovers", async () => {
+  serveGenreMovies({}, { fail: { 878: 500 } });
+  const user = await openScienceFiction();
+  expect(await screen.findByText("Couldn't load movies")).toBeOnTheScreen();
+  expect(screen.getByText('TMDb had a problem. Try again in a moment.')).toBeOnTheScreen();
+
+  serveGenreMovies({ 878: [tmdbMovie({ title: 'Dune: Part Two' })] });
+  await user.press(screen.getByRole('button', { name: 'Retry' }));
+
+  expect(await screen.findByRole('button', { name: 'Dune: Part Two' })).toBeOnTheScreen();
+  expect(screen.queryByText("Couldn't load movies")).not.toBeOnTheScreen();
+});
+
+test('offline, a genre not browsed this session says it needs a connection, and shows its movies once it is back', async () => {
+  const user = userEvent.setup();
+  serveGenres([scienceFiction]);
+  await renderApp({ name: 'Search' });
+  const tile = await screen.findByRole('button', { name: 'Science Fiction' });
+  await goOffline();
+
+  await user.press(tile);
+
+  expect(await screen.findByText("You're offline")).toBeOnTheScreen();
+  expect(screen.getByText('Connect to the internet to browse this genre.')).toBeOnTheScreen();
+  expect(screen.queryByLabelText('Loading results')).not.toBeOnTheScreen();
+
+  serveGenreMovies({ 878: [tmdbMovie({ title: 'Dune: Part Two' })] });
+  await goOnline();
+
+  expect(await screen.findByRole('button', { name: 'Dune: Part Two' })).toBeOnTheScreen();
+  expect(screen.queryByText("You're offline")).not.toBeOnTheScreen();
+});
+
+test('offline, a genre browsed earlier in the session shows its movies under an offline banner, without asking TMDb again', async () => {
+  const discover = serveGenreMovies({ 878: [tmdbMovie({ title: 'Dune: Part Two' })] });
+  const user = await openScienceFiction();
+  await screen.findByRole('button', { name: 'Dune: Part Two' });
+  await user.press(screen.getByRole('button', { name: 'Back' }));
+  await goOffline();
+
+  await user.press(screen.getByRole('button', { name: 'Science Fiction' }));
+
+  expect(screen.getByRole('button', { name: 'Dune: Part Two' })).toBeOnTheScreen();
+  expect(screen.getByText("You're offline. Showing movies from earlier.")).toBeOnTheScreen();
+  expect(discover.genreIds).toEqual([878]);
+});
+
+test("a genre's movies are not saved: after a restart offline, a genre browsed before needs a connection", async () => {
+  serveGenreMovies({ 878: [tmdbMovie({ title: 'Dune: Part Two' })] });
+  await openScienceFiction();
+  await screen.findByRole('button', { name: 'Dune: Part Two' });
+  await letDiskSettle();
+  await screen.unmount();
+  await goOffline();
+
+  // The genre list is saved, so the grid still shows offline
+  await openScienceFiction();
 
   expect(await screen.findByText("You're offline")).toBeOnTheScreen();
   expect(screen.queryByRole('button', { name: 'Dune: Part Two' })).not.toBeOnTheScreen();

@@ -35,6 +35,15 @@ export async function searchMovies(term: string, page: number, signal: AbortSign
   return toMoviePage(body);
 }
 
+/** One page of a genre's movies, in TMDb's own order for discover: the most popular first. */
+export async function fetchGenreMovies(genreId: number, page: number, signal: AbortSignal): Promise<Paged<Movie>> {
+  const body = await tmdbGet<TmdbPage<TmdbMovie>>('/discover/movie', {
+    params: { with_genres: genreId, page },
+    signal,
+  });
+  return toMoviePage(body);
+}
+
 function toMovieDetail(movie: TmdbMovieDetail): MovieDetail {
   return {
     id: movie.id,

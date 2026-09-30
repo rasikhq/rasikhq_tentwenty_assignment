@@ -3,6 +3,7 @@ export const queryKeyRoots = {
   upcoming: 'upcoming',
   movieDetail: 'movieDetail',
   search: 'search',
+  genreMovies: 'genreMovies',
   genres: 'genres',
 } as const;
 
@@ -13,4 +14,5 @@ export const queryKeys = {
   /** Keyed by the normalized search term, so an answer can only land under the term it was asked for (ADR-0001). */
   search: (term: string) => [queryKeyRoots.search, term] as const,
   genres: () => [queryKeyRoots.genres] as const,
+  genreMovies: (genreId: number) => [queryKeyRoots.genreMovies, genreId] as const,
 };

@@ -20,3 +20,8 @@ export function moviesOnce(pages: Paged<Movie>[]): Movie[] {
   }
   return [...moviesById.values()];
 }
+
+/** For an infinite query's `select`: the movies of the pages loaded so far, each once. */
+export function selectMoviesOnce(data: { pages: Paged<Movie>[] }): Movie[] {
+  return moviesOnce(data.pages);
+}

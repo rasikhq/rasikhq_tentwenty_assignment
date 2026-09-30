@@ -16,3 +16,8 @@ export function useIsWide(): boolean {
 export function useColumnCount(): 1 | 2 {
   return useIsWide() ? 2 : 1;
 }
+
+/** How many columns of genre tiles fit: two below the wide breakpoint, four above it. */
+export function useGenreColumnCount(): 2 | 4 {
+  return useIsWide() ? 4 : 2;
+}

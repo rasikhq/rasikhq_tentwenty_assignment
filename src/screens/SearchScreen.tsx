@@ -5,9 +5,11 @@ import { useCallback, useState, type ReactNode } from 'react';
 import { Keyboard, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { Movie } from '../api/types';
+import type { Genre, Movie } from '../api/types';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
+import { GenreGrid } from '../components/GenreGrid';
+import { GenreGridSkeleton } from '../components/GenreGridSkeleton';
 import { MovieRow } from '../components/MovieRow';
 import { MovieRowsSkeleton } from '../components/MovieRowsSkeleton';
 import { OfflineBanner } from '../components/OfflineBanner';
@@ -18,8 +20,10 @@ import { Text } from '../components/Text';
 import { useGenres } from '../hooks/useGenres';
 import { useIsOnline } from '../hooks/useIsOnline';
 import { useTopResults } from '../hooks/useTopResults';
+import { useLoadedUpcomingMovies } from '../hooks/useUpcomingMovies';
 import { errorMessage } from '../lib/errorMessage';
 import { firstGenreName } from '../lib/genres';
+import { genreTiles } from '../lib/genreTiles';
 import { useColumnCount } from '../lib/layout';
 import { normalizeSearchTerm } from '../lib/searchTerm';
 import type { RootStackParamList } from '../navigation/RootNavigator';
@@ -56,7 +60,15 @@ export function SearchScreen({ navigation }: NativeStackScreenProps<RootStackPar
   // Every state sits at the top of the screen, where the keyboard doesn't cover it
   let content: ReactNode;
   if (term === '') {
-    content = <EmptyState title="Find a movie" message="Search for a movie by its title." />;
+    content = (
+      <GenreBrowse
+        onOpen={(genre) => {
+          // The field may have the focus, and on Android the keyboard would stay up over Results
+          Keyboard.dismiss();
+          navigation.navigate('Results', { kind: 'genre', genre });
+        }}
+      />
+    );
   } else if (results?.length === 0) {
     content = <EmptyState title={`No movies match '${text.trim()}'`} message="Try different words." />;
   } else if (results) {
@@ -129,4 +141,36 @@ export function SearchScreen({ navigation }: NativeStackScreenProps<RootStackPar
       {content}
     </Screen>
   );
+}
+
+/** What Search shows before any typing: the genre grid, or where the genre list it comes from stands. */
+function GenreBrowse({ onOpen }: { onOpen: (genre: Genre) => void }) {
+  const { data: genres, error, fetchStatus, refetch } = useGenres();
+  // The tiles take their images from the upcoming movies the app already has, so they ask TMDb for nothing
+  const upcoming = useLoadedUpcomingMovies();
+
+  if (genres?.length === 0) {
+    // TMDb has genres. Should it ever list none, Search still says what it is for
+    return <EmptyState title="Find a movie" message="Search for a movie by its title." />;
+  }
+  if (genres) {
+    return <GenreGrid tiles={genreTiles(genres, upcoming)} onPress={onOpen} />;
+  }
+  if (fetchStatus === 'paused') {
+    // Offline with no saved genre list: the request waits for a connection, so no error ever arrives
+    return (
+      <OfflineState inline message="Connect to the internet to browse genres." onRetry={() => void refetch()} />
+    );
+  }
+  if (error) {
+    return (
+      <ErrorState
+        inline
+        title="Couldn't load genres"
+        message={errorMessage(error)}
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+  return <GenreGridSkeleton label="Loading genres" />;
 }
