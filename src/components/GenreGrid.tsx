@@ -2,12 +2,13 @@ import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Genre } from '../api/types';
-import type { GenreTile as Tile } from '../lib/genreTiles';
-import { useGenreColumnCount } from '../lib/layout';
+import type { GenreBackdrop } from '../lib/genreBackdrops';
+import { columnWidthClass, useGenreColumnCount } from '../lib/layout';
 import { GenreTile } from './GenreTile';
 
 type GenreGridProps = {
-  tiles: Tile[];
+  /** The genres, each with the backdrop its tile shows. */
+  tiles: GenreBackdrop[];
   /** A tile was tapped. */
   onPress: (genre: Genre) => void;
 };
@@ -21,15 +22,15 @@ export function GenreGrid({ tiles, onPress }: GenreGridProps) {
     <ScrollView
       accessibilityLabel="Genres"
       // The grid scrolls under the home indicator, so its end pads by the bottom inset
-      contentContainerStyle={{ padding: 15, paddingBottom: 15 + insets.bottom }}
+      contentContainerStyle={{ padding: 16, paddingBottom: 16 + insets.bottom }}
       // A tap on a tile opens its genre even while the keyboard is up, and scrolling puts the keyboard away
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
     >
       <View className="flex-row flex-wrap">
-        {tiles.map((tile, index) => (
-          <View key={tile.genre.id} className={`p-[5px] ${columns === 2 ? 'w-1/2' : 'w-1/4'}`}>
-            <GenreTile tile={tile} index={index} onPress={() => onPress(tile.genre)} />
+        {tiles.map(({ genre, backdropPath }, index) => (
+          <View key={genre.id} className={`p-1 ${columnWidthClass[columns]}`}>
+            <GenreTile genre={genre} backdropPath={backdropPath} index={index} onPress={() => onPress(genre)} />
           </View>
         ))}
       </View>

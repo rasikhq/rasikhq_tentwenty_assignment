@@ -42,7 +42,7 @@ _Avoid_: Search results screen, results page
 The movie detail's line under the title: "In Theaters <date>" for a bookable movie, "Released <date>" for any other.
 
 **Offline banner**:
-A slim note above saved movies, a saved movie detail, or Top Results or Results from earlier in the session, saying the user is offline and the screen shows data from before.
+A slim note above saved movies, a saved movie detail, the genre grid, or Top Results or Results from earlier in the session, saying the user is offline and the screen shows data from before.
 
 **Offline state**:
 The message, with Retry, that takes a screen's content area offline when nothing is saved to show there.

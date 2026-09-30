@@ -10,5 +10,5 @@ export function imagePathsIn(element: TestInstance): string[] {
   return element
     .queryAll((node) => Array.isArray(node.props.source))
     .flatMap((image) => image.props.source as ImageSource[])
-    .map((source) => source.uri.replace(/^https:\/\/image\.tmdb\.org\/t\/p\/\w+/, ''));
+    .map((source) => source.uri.replace(/^.*\/t\/p\/\w+/, ''));
 }

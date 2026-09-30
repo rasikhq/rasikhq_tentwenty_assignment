@@ -23,8 +23,8 @@ import { useTopResults } from '../hooks/useTopResults';
 import { useLoadedUpcomingMovies } from '../hooks/useUpcomingMovies';
 import { errorMessage } from '../lib/errorMessage';
 import { firstGenreName } from '../lib/genres';
-import { genreTiles } from '../lib/genreTiles';
-import { useColumnCount } from '../lib/layout';
+import { genreBackdrops } from '../lib/genreBackdrops';
+import { useMovieColumnCount } from '../lib/layout';
 import { normalizeSearchTerm } from '../lib/searchTerm';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 
@@ -38,7 +38,7 @@ export function SearchScreen({ navigation }: NativeStackScreenProps<RootStackPar
   const { data: genres } = useGenres();
   const isOnline = useIsOnline();
   const insets = useSafeAreaInsets();
-  const columns = useColumnCount();
+  const columns = useMovieColumnCount();
 
   const renderMovie: ListRenderItem<Movie> = useCallback(
     ({ item }) => (
@@ -61,7 +61,7 @@ export function SearchScreen({ navigation }: NativeStackScreenProps<RootStackPar
   let content: ReactNode;
   if (term === '') {
     content = (
-      <GenreBrowse
+      <SearchIdle
         onOpen={(genre) => {
           // The field may have the focus, and on Android the keyboard would stay up over Results
           Keyboard.dismiss();
@@ -144,17 +144,24 @@ export function SearchScreen({ navigation }: NativeStackScreenProps<RootStackPar
 }
 
 /** What Search shows before any typing: the genre grid, or where the genre list it comes from stands. */
-function GenreBrowse({ onOpen }: { onOpen: (genre: Genre) => void }) {
+function SearchIdle({ onOpen }: { onOpen: (genre: Genre) => void }) {
   const { data: genres, error, fetchStatus, refetch } = useGenres();
   // The tiles take their images from the upcoming movies the app already has, so they ask TMDb for nothing
   const upcoming = useLoadedUpcomingMovies();
+  const isOnline = useIsOnline();
 
   if (genres?.length === 0) {
     // TMDb has genres. Should it ever list none, Search still says what it is for
     return <EmptyState title="Find a movie" message="Search for a movie by its title." />;
   }
   if (genres) {
-    return <GenreGrid tiles={genreTiles(genres, upcoming)} onPress={onOpen} />;
+    return (
+      <>
+        {/* The genre list is the saved one. Offline, a tile opens only a genre browsed earlier in the session */}
+        {!isOnline && <OfflineBanner message="You're offline. Showing saved genres." />}
+        <GenreGrid tiles={genreBackdrops(genres, upcoming)} onPress={onOpen} />
+      </>
+    );
   }
   if (fetchStatus === 'paused') {
     // Offline with no saved genre list: the request waits for a connection, so no error ever arrives

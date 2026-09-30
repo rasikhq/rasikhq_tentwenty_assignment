@@ -16,6 +16,7 @@ import {
   tmdbMovie,
   tmdbMovieDetail,
 } from '../test/tmdb';
+import { rotateToLandscape } from '../test/window';
 
 // Search asks TMDb for the genre list as it opens. A test that shows genre names serves its own.
 beforeEach(() => {
@@ -85,7 +86,7 @@ test('a genre with no upcoming movie gets a colour tile, without an image', asyn
   expect(imagePathsIn(screen.getByRole('button', { name: 'Western' }))).toEqual([]);
 });
 
-test('genre tiles show different movies where the upcoming movies allow it', async () => {
+test('an upcoming movie in two genres is the image of the genre that has no other movie', async () => {
   serveGenres([
     { id: 12, name: 'Adventure' },
     { id: 878, name: 'Science Fiction' },
@@ -114,19 +115,6 @@ test('two genres with one upcoming movie between them both show its image', asyn
     expect(imagePathsIn(screen.getByRole('button', { name: 'Science Fiction' }))).toEqual(['/dune.jpg']),
   );
   expect(imagePathsIn(screen.getByRole('button', { name: 'Adventure' }))).toEqual(['/dune.jpg']);
-});
-
-test('an upcoming movie that carries no genres gives no tile its image', async () => {
-  const user = userEvent.setup();
-  serveGenres([{ id: 878, name: 'Science Fiction' }]);
-  // As a movie saved on the device before list movies carried their genres
-  serveUpcoming([[tmdbMovie({ title: 'Dune', genre_ids: undefined })]]);
-  await renderApp();
-  await screen.findByRole('button', { name: 'Dune' });
-
-  await user.press(screen.getByRole('button', { name: 'Search' }));
-
-  expect(imagePathsIn(await screen.findByRole('button', { name: 'Science Fiction' }))).toEqual([]);
 });
 
 test('while the genre list loads, Search shows placeholder tiles, then the genre grid replaces them', async () => {
@@ -173,7 +161,7 @@ test('offline with no saved genre list, Search says genres need a connection, an
   expect(screen.queryByText("You're offline")).not.toBeOnTheScreen();
 });
 
-test('after a restart offline, the genre grid shows from the saved genre list', async () => {
+test('after a restart offline, the genre grid shows from the saved genre list, under an offline banner', async () => {
   serveGenres([{ id: 35, name: 'Comedy' }]);
   await renderApp({ name: 'Search' });
   await screen.findByRole('button', { name: 'Comedy' });
@@ -184,7 +172,26 @@ test('after a restart offline, the genre grid shows from the saved genre list', 
   await renderApp({ name: 'Search' });
 
   expect(await screen.findByRole('button', { name: 'Comedy' })).toBeOnTheScreen();
-  expect(screen.queryByText("You're offline")).not.toBeOnTheScreen();
+  expect(screen.getByText("You're offline. Showing saved genres.")).toBeOnTheScreen();
+
+  await goOnline();
+
+  expect(screen.queryByText(/You're offline/)).not.toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Comedy' })).toBeOnTheScreen();
+});
+
+test('the genre grid keeps its tiles when the phone rotates to landscape', async () => {
+  serveGenres([
+    { id: 35, name: 'Comedy' },
+    { id: 80, name: 'Crime' },
+  ]);
+  await renderApp({ name: 'Search' });
+  await screen.findByRole('button', { name: 'Comedy' });
+
+  await rotateToLandscape();
+
+  expect(screen.getByRole('button', { name: 'Comedy' })).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Crime' })).toBeOnTheScreen();
 });
 
 test('typing replaces the genre grid with Top Results, and clearing the text brings the grid back', async () => {

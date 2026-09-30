@@ -196,8 +196,6 @@ export function serveSearch(matches: Record<string, MoviePages>, { hold = {}, fa
 }
 
 type ServeGenreMoviesOptions = {
-  /** Answers for these genres, by genre id, wait until the promise resolves, such as a gate's `opened`. */
-  hold?: Record<number, Promise<void>>;
   /** Requests for these genres, by genre id, fail. */
   fail?: Record<number, Failure>;
 };
@@ -207,18 +205,14 @@ type ServeGenreMoviesOptions = {
  * of its movies, or one array per page for a genre with several. A genre that isn't listed has no movies.
  * The result lists the genre id of every request that came in, in order.
  */
-export function serveGenreMovies(
-  movies: Record<number, MoviePages>,
-  { hold = {}, fail = {} }: ServeGenreMoviesOptions = {},
-) {
+export function serveGenreMovies(movies: Record<number, MoviePages>, { fail = {} }: ServeGenreMoviesOptions = {}) {
   const served = { genreIds: [] as number[] };
   server.use(
-    http.get(`${BASE_URL}/discover/movie`, async ({ request }) => {
+    http.get(`${BASE_URL}/discover/movie`, ({ request }) => {
       const params = new URL(request.url).searchParams;
       const genreId = Number(params.get('with_genres'));
       const page = Number(params.get('page') ?? 1);
       served.genreIds.push(genreId);
-      await hold[genreId];
       if (request.headers.get('Authorization') !== `Bearer ${TEST_TOKEN}`) {
         return HttpResponse.json(invalidKey, { status: 401 });
       }

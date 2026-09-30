@@ -55,3 +55,9 @@ Agent built its own toast component for the 8-seat refusal. I challenged it: inv
 ### Seat shape
 
 Agent drew a seat as one block, rounder at the back (it couldn't read the Figma file in that session), steered to the Figma's seat instead, from a screenshot of the Figma legend, because: the swatch could be improved to represent this shape, more closely to the provided Figma, and it shouldn't be more complicated than the current custom shape.
+
+## 2026-09-30 — Ticket 12 (genre browse)
+
+### Upcoming movies saved without their genres
+
+The code review flagged the agent's guard for an upcoming movie saved before list movies carried their genres (a cast against the app type, with a test that faked TMDb sending no genres). Agent recommended bumping the app version to 1.0.1, so the cache buster discards such a saved list, steered to removing the guard with no version bump instead. Picked from the options the agent offered, with no comment of my own to transcribe. The option read: no build was ever released, and both dev devices refreshed their list since ticket 08.

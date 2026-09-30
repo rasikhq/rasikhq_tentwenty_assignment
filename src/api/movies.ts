@@ -17,8 +17,16 @@ function toMovie(movie: TmdbMovie): Movie {
   };
 }
 
+// TMDb serves the first 500 pages of a list and answers page 501 with an error, whatever total_pages says.
+// A genre has more: Science Fiction reports 1,001 pages.
+const LAST_PAGE_SERVED = 500;
+
 function toMoviePage(body: TmdbPage<TmdbMovie>): Paged<Movie> {
-  return { items: body.results.map(toMovie), totalPages: body.total_pages, totalResults: body.total_results };
+  return {
+    items: body.results.map(toMovie),
+    totalPages: Math.min(body.total_pages, LAST_PAGE_SERVED),
+    totalResults: body.total_results,
+  };
 }
 
 export async function fetchUpcomingMovies(page: number, signal: AbortSignal): Promise<Paged<Movie>> {

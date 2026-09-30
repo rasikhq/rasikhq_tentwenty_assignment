@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Movie } from '../api/types';
 import { errorMessage } from '../lib/errorMessage';
-import { useColumnCount } from '../lib/layout';
+import { useMovieColumnCount } from '../lib/layout';
 import { ErrorState } from './ErrorState';
 
 // FlashList reports the movies on screen only after they've been there for 250 ms by default. Tracking the
@@ -58,7 +58,7 @@ export function PagedMovieList({
 }: PagedMovieListProps) {
   const { hasNextPage, isFetchingNextPage, isFetchNextPageError, error, fetchNextPage } = nextPage;
   const insets = useSafeAreaInsets();
-  const columns = useColumnCount();
+  const columns = useMovieColumnCount();
   // The first movie on screen. A new column count starts a new list, which opens at this movie
   const firstVisibleIndex = useRef(0);
 

@@ -15,20 +15,20 @@
 
 ## Decisions made while building
 
-- The genre grid is what Search shows while the field is empty. It replaces the "Find a movie" prompt. `GenreBrowse` in `SearchScreen.tsx` reads the genre list (`useGenres()`, already fetched and saved since ticket 08) and shows the grid, or where the genre list stands:
+- The genre grid is what Search shows while the field is empty. It replaces the "Find a movie" prompt. `GenreBrowse` in `SearchScreen.tsx` (after review, `SearchIdle`) reads the genre list (`useGenres()`, already fetched and saved since ticket 08) and shows the grid, or where the genre list stands:
   - Loading: placeholder tiles, labelled "Loading genres".
   - Failed: "Couldn't load genres" with Retry.
   - Offline with no saved genre list (a first run offline, or a saved copy more than 7 days old): "You're offline. Connect to the internet to browse genres." with Retry. The grid shows by itself once the connection is back.
   - TMDb lists no genres: the old "Find a movie" prompt. TMDb has genres, so this is only there so the screen is never blank.
-- Offline with a saved genre list, the grid shows with no offline banner. The genre list is not what the user came to read, and a tile that can't load says so on Results.
-- The grid is a `ScrollView` with wrapping tiles, not a FlashList. TMDb has 19 genres, so there is nothing to recycle. Two columns below the wide breakpoint and four above it (`useGenreColumnCount()` in `src/lib/layout.ts`). A tile is 100 dp high with 10 dp between tiles and 20 dp at the sides, as the rows of Top Results have.
+- Offline with a saved genre list, the grid shows with no offline banner. The genre list is not what the user came to read, and a tile that can't load says so on Results. After review, the grid shows under the banner "You're offline. Showing saved genres.": the spec asks for the banner on every screen that shows saved data.
+- The grid is a `ScrollView` with wrapping tiles, not a FlashList. TMDb has 19 genres, so there is nothing to recycle. Two columns below the wide breakpoint and four above it (`useGenreColumnCount()` in `src/lib/layout.ts`). A tile is 100 dp high with 10 dp between tiles and 20 dp at the sides, as the rows of Top Results have. After review, 8 dp between tiles (16 dp around the grid and 4 dp around each tile), so every padding is on the spacing scale.
 - A tile's image comes from the upcoming movies the app already holds: `useLoadedUpcomingMovies()` reads the upcoming query with `enabled: false`, so Search never asks TMDb for upcoming movies. It still follows the query, so a list that arrives after Search opened gives the tiles their images. Opened from Movie list, the movies are the pages loaded there. After a restart they are the saved pages.
-- Which movie a tile shows is `genreTiles(genres, movies)` in `src/lib/genreTiles.ts`:
+- Which movie a tile shows is `genreTiles(genres, movies)` in `src/lib/genreTiles.ts` (after review, `genreBackdrops()` in `src/lib/genreBackdrops.ts`):
   - A tile shows the first upcoming movie in its genre that has a backdrop and that no other tile shows.
   - The genre with the fewest movies picks first. With first-match, the movie at the top of the list (often Action, Adventure and Science Fiction at once) was the image of three tiles in the first two rows.
   - A genre whose movies are all shown by other tiles shares one. It has a match, so it gets an image, as the spec says.
   - A genre with no upcoming movie gets no image.
-  - A saved movie from before ticket 08 has no `genreIds`. It counts as being in no genre. The cache buster stays at 1.0.0.
+  - A saved movie from before ticket 08 has no `genreIds`. It counts as being in no genre. The cache buster stays at 1.0.0. After review, this guard is gone (see below).
 - The image is the `card` size (w780), the file a Movie list card shows. A backdrop the user has seen on Movie list is already on the device, so its tile shows at once and offline. The rejected option was a smaller size of its own (w500), which would download every tile's image again.
 - A tile with no image is a palette colour, cycling teal, pink, purple and gold by the tile's place in the grid, as chips do. Every tile has the darkening gradient and a white name, so tiles with and without an image read the same, and white on teal or gold stays readable over the gradient's dark end. The colour also shows while an image loads.
 - Tiles are buttons labelled with the genre's name. The image is hidden from screen readers.
@@ -43,13 +43,36 @@
   - Offline, browsed earlier: the movies under "You're offline. Showing movies from earlier."
 - A row on a genre's Results shows the movie's first genre, as every other row does (the spec: rows are the same as Top Results). So a row under Science Fiction can say Horror.
 - Tests:
-  - `SearchScreen.test.tsx` gains 11. The test that expected the prompt now expects the tiles.
+  - `SearchScreen.test.tsx` gains 11. The test that expected the prompt now expects the tiles. After review it is still 11: one removed with the guard, one added for rotation.
   - `ResultsScreen.test.tsx` gains 8.
   - `serveGenreMovies()` in `src/test/tmdb.ts` fakes the discover endpoint, with several pages per genre id, as `serveSearch()` does per query. `serveGenres()` can now hold its answer or fail.
   - `imagePathsIn(element)` in `src/test/images.ts` reads the TMDb file paths of the images drawn inside an element. It is how a test sees which movie a tile shows. An image is decoration to a screen reader, so no role or label finds it.
   - No test tells two columns from four, because Jest has no layout pass.
 - Glossary: `CONTEXT.md` gains "Genre grid", and Search and Results now name genres.
-- Verified: `npm run check` passes (typecheck, lint with no warnings, 194 tests). On the Pixel 9 Pro emulator (API 35), with TMDb's real data: the grid shows all 19 genres, 17 with different images and 2 (Mystery, TV Movie) as colour tiles; Science Fiction opens Results with its name and its movies, and more load on scroll; in landscape the grid has four columns; in airplane mode a genre not browsed shows the offline state and Science Fiction shows its movies under the banner. On the iPhone 17 Pro simulator (iOS 26.5): the grid in portrait. Not checked: a tap on a tile and landscape on iOS (taps from the agent's tool don't land reliably there), a screen reader on either platform, and the iOS 18.5 simulator.
+- Verified: `npm run check` passes (typecheck, lint with no warnings, 194 tests, before and after the review's changes). On the Pixel 9 Pro emulator (API 35), with TMDb's real data: the grid shows all 19 genres, 17 with different images and 2 (Mystery, TV Movie) as colour tiles; Science Fiction opens Results with its name and its movies, and more load on scroll; in landscape the grid has four columns; in airplane mode a genre not browsed shows the offline state and Science Fiction shows its movies under the banner. On the iPhone 17 Pro simulator (iOS 26.5): the grid in portrait. Not checked: a tap on a tile and landscape on iOS (taps from the agent's tool don't land reliably there), a screen reader on either platform, and the iOS 18.5 simulator.
+
+- After review (two sub-agents, about 264k tokens):
+  - Fixed:
+    - A genre's Results could end in an error that Retry could not clear. TMDb serves only the first 500 pages of a list, and a genre has more. Checked against TMDb itself: Science Fiction reports 1,001 pages, page 500 answers and page 501 is an HTTP 400. `toMoviePage()` now stops `totalPages` at 500, for every paged list, so the list ends after page 500. No test covers it: a test can't scroll through 500 pages.
+    - The genre grid shows under an offline banner when the phone is offline. Seen on the Pixel 9 Pro emulator in airplane mode, with the tiles' images still showing.
+    - A test rotates the genre grid and expects its tiles still there.
+    - Names: `GenreBrowse` is `SearchIdle` (the glossary avoids "genre browser"). The type `GenreTile` is `GenreBackdrop`, so it no longer shares its name with the component, and `GenreTile` takes `genre` and `backdropPath`. `useColumnCount` is `useMovieColumnCount`, beside `useGenreColumnCount`.
+    - `SkeletonGrid` takes its column count from its caller, and no longer asks for the movie columns itself. The width of a column comes from one map, `columnWidthClass` in `src/lib/layout.ts`, which the genre grid uses too.
+    - The grid's paddings are on the spacing scale (16 and 4 dp).
+    - `genreBackdrops()` and its test no longer say tiles show different movies "where they can". The rule takes one genre at a time and never goes back, so three genres that share three movies can still end with two tiles alike.
+    - `serveGenreMovies()` lost a `hold` option no test used. `imagePathsIn()` no longer repeats the image host.
+  - Decided by the user:
+    - A saved movie with no `genreIds`: the guard and its test are removed, and the cache buster stays at 1.0.0. No build was ever released, and both dev devices have refreshed their upcoming list since ticket 08, so no device holds such a movie. The agent recommended bumping the app version to 1.0.1 (see the steering log).
+    - The rule that tiles show different movies stays, though the spec asks only for "the backdrop of a cached upcoming movie in that genre".
+  - Left as they are:
+    - `imagePathsIn()` reads an image's `source`, which is not text, a role, a label or a state. The seat map tests read a seat's size the same way, for the same reason: nothing else tells a test what is drawn.
+    - The colour-tile test proves there is no image, not that there is a colour. Tests don't read styles.
+    - A colour tile has the gradient over it, so it is not strictly the spec's "solid" tile.
+    - The "Find a movie" prompt for an empty genre list stays, with its test, so Search is never blank.
+    - The tile colours repeat the order of the chip colours. The skeleton repeats the tile's size, as the row skeleton repeats the row's. `serveGenreMovies()` reads like `serveSearch()`.
+    - `ResultsView` takes its wording as five separate props, and its query as `UseInfiniteQueryResult<unknown>`.
+- Known:
+  - A search's "N Results Found" can count more movies than the 10,000 (500 pages) TMDb serves.
 
 ## Comments
 

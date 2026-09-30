@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { imageUrl } from '../api/images';
-import type { GenreTile as Tile } from '../lib/genreTiles';
+import type { Genre } from '../api/types';
 import { Scrim } from './Scrim';
 import { Text } from './Text';
 
@@ -10,7 +10,9 @@ import { Text } from './Text';
 const colours = ['bg-teal', 'bg-pink', 'bg-purple', 'bg-gold'] as const;
 
 type GenreTileProps = {
-  tile: Tile;
+  genre: Genre;
+  /** TMDb's file path for the backdrop of a movie in the genre, or null when the tile has none to show. */
+  backdropPath: string | null;
   /** The tile's place in the grid, which picks its colour: teal, pink, purple, gold, then round again. */
   index: number;
   onPress: () => void;
@@ -20,9 +22,7 @@ type GenreTileProps = {
  * A genre as a tile of the genre grid: its name over a darkening gradient, on the backdrop of a movie in
  * the genre. The palette colour shows while the image loads, and stays when the tile has no backdrop.
  */
-export function GenreTile({ tile, index, onPress }: GenreTileProps) {
-  const { genre, backdropPath } = tile;
-
+export function GenreTile({ genre, backdropPath, index, onPress }: GenreTileProps) {
   return (
     <Pressable
       accessibilityRole="button"

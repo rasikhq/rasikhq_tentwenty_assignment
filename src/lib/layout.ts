@@ -12,8 +12,8 @@ export function useIsWide(): boolean {
   return useWindowDimensions().width >= WIDE_BREAKPOINT;
 }
 
-/** How many columns of cards fit: one below the wide breakpoint, two above it. */
-export function useColumnCount(): 1 | 2 {
+/** How many columns of movies fit: one below the wide breakpoint, two above it. */
+export function useMovieColumnCount(): 1 | 2 {
   return useIsWide() ? 2 : 1;
 }
 
@@ -21,3 +21,6 @@ export function useColumnCount(): 1 | 2 {
 export function useGenreColumnCount(): 2 | 4 {
   return useIsWide() ? 4 : 2;
 }
+
+/** The width of one column as a class name, by how many columns share the row. */
+export const columnWidthClass = { 1: 'w-full', 2: 'w-1/2', 4: 'w-1/4' } as const;
