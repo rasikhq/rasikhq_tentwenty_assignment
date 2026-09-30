@@ -1,13 +1,10 @@
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { imageUrl } from '../api/images';
+import { Scrim } from './Scrim';
 import { Text } from './Text';
-
-// Clear at the top to dark at the bottom, so the title stays readable on a bright backdrop
-const scrim = ['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.8)'] as const;
 
 type MovieHeroProps = {
   title: string;
@@ -36,12 +33,15 @@ export function MovieHero({ title, backdropPath, children, fill = false }: Movie
           accessible={false}
         />
       )}
-      <LinearGradient colors={scrim} style={StyleSheet.absoluteFill} />
-      <View className="flex-1 justify-end gap-1 p-5">
-        <Text variant="heroTitle" accessibilityRole="header">
-          {title}
-        </Text>
-        {children}
+      <Scrim />
+      {/* Beside a display cutout, the title clears it. The image itself runs under it. */}
+      <View className="flex-1 pl-safe">
+        <View className="flex-1 justify-end gap-1 p-5">
+          <Text variant="heroTitle" accessibilityRole="header">
+            {title}
+          </Text>
+          {children}
+        </View>
       </View>
     </View>
   );

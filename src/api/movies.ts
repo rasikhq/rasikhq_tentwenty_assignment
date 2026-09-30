@@ -23,7 +23,7 @@ function toMovieDetail(movie: TmdbMovieDetail): MovieDetail {
     ...toMovie(movie),
     // TMDb sends an empty string for a date it doesn't have
     releaseDate: movie.release_date || null,
-    genres: movie.genres,
+    genres: movie.genres.map(({ id, name }) => ({ id, name })),
     overview: movie.overview,
     backdropPaths: movie.images.backdrops.map((image) => image.file_path),
   };

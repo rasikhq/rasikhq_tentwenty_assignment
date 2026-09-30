@@ -1,27 +1,27 @@
 import { screen, userEvent } from '@testing-library/react-native';
 
-import { controlDate, passHours } from '../test/clock';
+import { controlDate, passDays, passHours } from '../test/clock';
 import { letDiskSettle } from '../test/disk';
 import { goOffline, goOnline } from '../test/network';
 import { renderApp } from '../test/renderApp';
 import { gate, serveMovieDetail, serveUpcoming, tmdbMovie, tmdbMovieDetail } from '../test/tmdb';
 import { rotateToLandscape } from '../test/window';
 
-/** Opens the app on Movie list, with these movies, and taps the first one. */
-async function openFirstMovie(...details: ReturnType<typeof tmdbMovieDetail>[]) {
+/** Opens the app on Movie list, which lists this movie, and taps it. */
+async function openMovie({ id, title }: ReturnType<typeof tmdbMovieDetail>) {
   const user = userEvent.setup();
-  serveUpcoming([details.map(({ id, title }) => tmdbMovie({ id, title }))]);
+  serveUpcoming([[tmdbMovie({ id, title })]]);
   await renderApp();
-  await user.press(await screen.findByRole('button', { name: details[0].title }));
+  await user.press(await screen.findByRole('button', { name: title }));
   return user;
 }
 
-test('tapping a movie opens its detail with the title from the list before the rest arrives', async () => {
+test('tapping a movie opens Movie detail with the title from the list before the rest arrives', async () => {
   const answer = gate();
   const detail = tmdbMovieDetail({ title: 'Dune: Part Three', overview: 'Paul Atreides faces his destiny.' });
   serveMovieDetail(detail, { hold: answer.opened });
 
-  await openFirstMovie(detail);
+  await openMovie(detail);
 
   expect(screen.getByRole('header', { name: 'Dune: Part Three' })).toBeOnTheScreen();
   expect(screen.queryByText('Paul Atreides faces his destiny.')).not.toBeOnTheScreen();
@@ -31,7 +31,7 @@ test('tapping a movie opens its detail with the title from the list before the r
   expect(await screen.findByText('Paul Atreides faces his destiny.')).toBeOnTheScreen();
 });
 
-test('the detail shows the movie\'s genres and overview', async () => {
+test('Movie detail shows the genres and overview', async () => {
   const detail = tmdbMovieDetail({
     overview: 'A crew of thieves plans one last job.',
     genres: [
@@ -41,7 +41,7 @@ test('the detail shows the movie\'s genres and overview', async () => {
   });
   serveMovieDetail(detail);
 
-  await openFirstMovie(detail);
+  await openMovie(detail);
 
   expect(await screen.findByText('A crew of thieves plans one last job.')).toBeOnTheScreen();
   expect(screen.getByText('Comedy')).toBeOnTheScreen();
@@ -53,7 +53,7 @@ test('a movie that has not been released yet says In Theaters with its release d
   const detail = tmdbMovieDetail({ release_date: '2099-12-22' });
   serveMovieDetail(detail);
 
-  await openFirstMovie(detail);
+  await openMovie(detail);
 
   expect(await screen.findByText('In Theaters December 22, 2099')).toBeOnTheScreen();
 });
@@ -62,7 +62,7 @@ test('an old movie says Released with its release date', async () => {
   const detail = tmdbMovieDetail({ release_date: '2021-12-22' });
   serveMovieDetail(detail);
 
-  await openFirstMovie(detail);
+  await openMovie(detail);
 
   expect(await screen.findByText('Released December 22, 2021')).toBeOnTheScreen();
   expect(screen.queryByText(/In Theaters/)).not.toBeOnTheScreen();
@@ -72,39 +72,39 @@ test('a movie without a release date has no release line', async () => {
   const detail = tmdbMovieDetail({ overview: 'Coming at some point.', release_date: '' });
   serveMovieDetail(detail);
 
-  await openFirstMovie(detail);
+  await openMovie(detail);
 
   expect(await screen.findByText('Coming at some point.')).toBeOnTheScreen();
   expect(screen.queryByText(/In Theaters|Released/)).not.toBeOnTheScreen();
 });
 
-test('a strip of the movie\'s images sits under the overview', async () => {
+test('Movie detail shows a strip of the movie\'s images', async () => {
   const detail = tmdbMovieDetail({
     images: { backdrops: [{ file_path: '/first.jpg' }, { file_path: '/second.jpg' }] },
   });
   serveMovieDetail(detail);
 
-  await openFirstMovie(detail);
+  await openMovie(detail);
 
   expect(await screen.findByLabelText('Movie images')).toBeOnTheScreen();
 });
 
-test('a movie without images has no image strip', async () => {
+test('a movie without images has no image strip on Movie detail', async () => {
   const detail = tmdbMovieDetail({ overview: 'No pictures yet.', images: { backdrops: [] } });
   serveMovieDetail(detail);
 
-  await openFirstMovie(detail);
+  await openMovie(detail);
 
   expect(await screen.findByText('No pictures yet.')).toBeOnTheScreen();
   expect(screen.queryByLabelText('Movie images')).not.toBeOnTheScreen();
 });
 
-test('placeholder sections stand in for the details while they load', async () => {
+test('Movie detail shows placeholder sections while the details load', async () => {
   const answer = gate();
   const detail = tmdbMovieDetail({ overview: 'Loaded at last.' });
   serveMovieDetail(detail, { hold: answer.opened });
 
-  await openFirstMovie(detail);
+  await openMovie(detail);
   expect(screen.getByLabelText('Loading movie details')).toBeOnTheScreen();
 
   answer.open();
@@ -113,10 +113,10 @@ test('placeholder sections stand in for the details while they load', async () =
   expect(screen.queryByLabelText('Loading movie details')).not.toBeOnTheScreen();
 });
 
-test('when the detail fails to load, Movie detail keeps the title and offers Retry, which recovers', async () => {
+test('when the details fail to load, Movie detail keeps the title and offers Retry, which recovers', async () => {
   const detail = tmdbMovieDetail({ title: 'Dune: Part Three', overview: 'Loaded on the second try.' });
   serveMovieDetail(detail, { fail: 500 });
-  const user = await openFirstMovie(detail);
+  const user = await openMovie(detail);
 
   expect(await screen.findByText("Couldn't load this movie")).toBeOnTheScreen();
   expect(screen.getByRole('header', { name: 'Dune: Part Three' })).toBeOnTheScreen();
@@ -132,7 +132,7 @@ test('when the detail fails to load, Movie detail keeps the title and offers Ret
 test('the back button returns to Movie list', async () => {
   const detail = tmdbMovieDetail({ title: 'Dune: Part Three' });
   serveMovieDetail(detail);
-  const user = await openFirstMovie(detail);
+  const user = await openMovie(detail);
   expect(screen.getByRole('header', { name: 'Dune: Part Three' })).toBeOnTheScreen();
 
   await user.press(screen.getByRole('button', { name: 'Back' }));
@@ -141,10 +141,10 @@ test('the back button returns to Movie list', async () => {
   expect(screen.getByRole('button', { name: 'Dune: Part Three' })).toBeOnTheScreen();
 });
 
-test('after the app restarts offline, a detail opened before still shows, under an offline banner', async () => {
+test('after the app restarts offline, Movie detail still shows a movie opened before, under an offline banner', async () => {
   const detail = tmdbMovieDetail({ title: 'Dune: Part Three', overview: 'Paul Atreides faces his destiny.' });
   serveMovieDetail(detail);
-  const user = await openFirstMovie(detail);
+  const user = await openMovie(detail);
   await screen.findByText('Paul Atreides faces his destiny.');
   await letDiskSettle();
   await goOffline();
@@ -178,11 +178,11 @@ test('offline with no saved detail, Movie detail offers an offline state with Re
   expect(screen.queryByText("You're offline")).not.toBeOnTheScreen();
 });
 
-test('a detail opened a day ago refreshes when it is opened again', async () => {
+test('Movie detail refreshes a movie that was last opened over a day ago', async () => {
   controlDate();
   const detail = tmdbMovieDetail({ title: 'Dune: Part Three', overview: 'The old overview.' });
   serveMovieDetail(detail);
-  const user = await openFirstMovie(detail);
+  const user = await openMovie(detail);
   await screen.findByText('The old overview.');
   await letDiskSettle();
   await screen.unmount();
@@ -195,21 +195,24 @@ test('a detail opened a day ago refreshes when it is opened again', async () => 
   expect(await screen.findByText('The new overview.')).toBeOnTheScreen();
 });
 
-test('a detail opened within the day is shown as it was, without a refresh', async () => {
+test('Movie detail shows a movie opened within the day as it was, without a refresh', async () => {
   controlDate();
   const detail = tmdbMovieDetail({ title: 'Dune: Part Three', overview: 'The old overview.' });
   serveMovieDetail(detail);
-  const user = await openFirstMovie(detail);
+  const user = await openMovie(detail);
   await screen.findByText('The old overview.');
   await letDiskSettle();
   await screen.unmount();
   passHours(23);
-  serveMovieDetail({ ...detail, overview: 'The new overview.' });
+  const refresh = serveMovieDetail({ ...detail, overview: 'The new overview.' });
 
   await renderApp();
   await user.press(await screen.findByRole('button', { name: 'Dune: Part Three' }));
 
   expect(await screen.findByText('The old overview.')).toBeOnTheScreen();
+  // A refresh would reach the fake TMDb well within this time
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  expect(refresh.requests).toBe(0);
   expect(screen.queryByText('The new overview.')).not.toBeOnTheScreen();
 });
 
@@ -223,7 +226,7 @@ test('in landscape, Movie detail still shows its title, details and back button'
   serveMovieDetail(detail);
   await rotateToLandscape();
 
-  const user = await openFirstMovie(detail);
+  const user = await openMovie(detail);
 
   expect(await screen.findByText('Paul Atreides faces his destiny.')).toBeOnTheScreen();
   expect(screen.getByRole('header', { name: 'Dune: Part Three' })).toBeOnTheScreen();
@@ -231,4 +234,29 @@ test('in landscape, Movie detail still shows its title, details and back button'
   expect(screen.getByText('Released December 22, 2021')).toBeOnTheScreen();
   await user.press(screen.getByRole('button', { name: 'Back' }));
   expect(screen.queryByRole('header', { name: 'Dune: Part Three' })).not.toBeOnTheScreen();
+});
+
+test('Movie detail drops a movie opened over a week ago without taking the fresher saved movies with it', async () => {
+  controlDate();
+  const detail = tmdbMovieDetail({ title: 'Dune: Part Three', overview: 'The old overview.' });
+  serveMovieDetail(detail);
+  const user = await openMovie(detail);
+  await screen.findByText('The old overview.');
+  await letDiskSettle();
+  await screen.unmount();
+  // Six days on, the list is refreshed and the detail is not
+  passDays(6);
+  serveUpcoming([[tmdbMovie({ id: detail.id, title: 'Dune: Part Three' }), tmdbMovie({ title: 'Another Movie' })]]);
+  await renderApp();
+  await screen.findByText('Another Movie');
+  await letDiskSettle();
+  await screen.unmount();
+  passDays(2);
+  await goOffline();
+
+  await renderApp();
+  await user.press(await screen.findByRole('button', { name: 'Dune: Part Three' }));
+
+  expect(await screen.findByText("You're offline")).toBeOnTheScreen();
+  expect(screen.queryByText('The old overview.')).not.toBeOnTheScreen();
 });

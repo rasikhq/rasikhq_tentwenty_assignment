@@ -1,4 +1,4 @@
-import { dayNumberOf, today } from './dates';
+import { dayNumberOf, todayDayNumber } from './dates';
 
 // How long a movie stays in theaters, and so bookable, after its release
 const BOOKABLE_DAYS_AFTER_RELEASE = 60;
@@ -9,5 +9,5 @@ const BOOKABLE_DAYS_AFTER_RELEASE = 60;
  */
 export function isBookable(releaseDate: string | null): boolean {
   if (releaseDate === null) return false;
-  return today() - dayNumberOf(releaseDate) <= BOOKABLE_DAYS_AFTER_RELEASE;
+  return todayDayNumber() - dayNumberOf(releaseDate) <= BOOKABLE_DAYS_AFTER_RELEASE;
 }

@@ -1,13 +1,10 @@
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { imageUrl } from '../api/images';
 import type { Movie } from '../api/types';
+import { Scrim } from './Scrim';
 import { Text } from './Text';
-
-// Clear at the top to dark at the bottom, so the title stays readable on a bright backdrop
-const scrim = ['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.8)'] as const;
 
 type MovieCardProps = {
   movie: Movie;
@@ -36,7 +33,7 @@ export function MovieCard({ movie, onPress }: MovieCardProps) {
           accessible={false}
         />
       )}
-      <LinearGradient colors={scrim} style={StyleSheet.absoluteFill} />
+      <Scrim />
       <View className="flex-1 justify-end p-4">
         <Text variant="cardTitle" numberOfLines={2}>
           {movie.title}

@@ -128,13 +128,16 @@ type ServeMovieDetailOptions = {
 /**
  * Serves TMDb's detail for one movie, with the videos and images the app asks to have appended.
  * A request without them fails, so a test that shows the detail also proves the app asked for them.
+ * The result counts the requests that came in.
  */
 export function serveMovieDetail(
   detail: TmdbMovieDetail,
   { hold, fail }: ServeMovieDetailOptions = {},
 ) {
+  const served = { requests: 0 };
   server.use(
     http.get(`${BASE_URL}/movie/${detail.id}`, async ({ request }) => {
+      served.requests += 1;
       await hold;
       const params = new URL(request.url).searchParams;
       if (request.headers.get('Authorization') !== `Bearer ${TEST_TOKEN}`) {
@@ -143,10 +146,14 @@ export function serveMovieDetail(
       if (fail !== undefined) {
         return failureResponse(fail);
       }
-      if (params.get('append_to_response') !== 'videos,images' || params.get('include_image_language') !== 'en,null') {
-        return HttpResponse.json({ status_code: 0, status_message: 'Invalid request.', success: false }, { status: 400 });
+      if (
+        params.get('append_to_response') !== 'videos,images' ||
+        params.get('include_image_language') !== 'en,null'
+      ) {
+        return failureResponse(400);
       }
       return HttpResponse.json(detail);
     }),
   );
+  return served;
 }

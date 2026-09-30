@@ -10,12 +10,12 @@ import { ErrorState } from '../components/ErrorState';
 import { MovieCard } from '../components/MovieCard';
 import { MovieListSkeleton } from '../components/MovieListSkeleton';
 import { OfflineBanner } from '../components/OfflineBanner';
+import { OfflineState } from '../components/OfflineState';
 import { Screen } from '../components/Screen';
 import { useIsOnline } from '../hooks/useIsOnline';
 import { useUpcomingMovies } from '../hooks/useUpcomingMovies';
 import { errorMessage } from '../lib/errorMessage';
 import { useColumnCount } from '../lib/layout';
-import { recheckConnection } from '../lib/nativeManagers';
 
 // FlashList reports the movies on screen only after they've been there for 250 ms by default. Tracking the
 // first one is cheap, so it reports at once
@@ -110,15 +110,7 @@ export function MovieListScreen() {
   } else if (fetchStatus === 'paused') {
     // Offline with nothing saved: the request waits for a connection, so no error ever arrives
     content = (
-      <ErrorState
-        title="You're offline"
-        message="Connect to the internet to load upcoming movies."
-        // The connection may have returned without the app hearing of it, so Retry checks it again
-        onRetry={() => {
-          void recheckConnection();
-          void refetch();
-        }}
-      />
+      <OfflineState message="Connect to the internet to load upcoming movies." onRetry={() => void refetch()} />
     );
   } else if (error) {
     content = (

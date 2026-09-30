@@ -5,7 +5,7 @@ import type { PersistedClient, PersistQueryClientOptions } from '@tanstack/react
 import Constants from 'expo-constants';
 
 import { DAY } from './duration';
-import { queryKeys } from './queryKeys';
+import { queryKeyRoots } from './queryKeys';
 
 // A saved copy older than this is discarded on restore
 const PERSIST_MAX_AGE = 7 * DAY;
@@ -35,7 +35,7 @@ export function createQueryClient() {
 }
 
 // What reaches the disk: the upcoming list, and the detail of every movie the user has opened
-const persistedQueries: readonly unknown[] = [queryKeys.upcoming()[0], queryKeys.movieDetail(0)[0]];
+const persistedQueries: readonly unknown[] = [queryKeyRoots.upcoming, queryKeyRoots.movieDetail];
 
 // The one place that decides what reaches the disk. Later tickets add their queries here. A query whose
 // refetch failed still holds its last data, which stays saved: a failed refresh must not wipe the copy.
@@ -73,11 +73,14 @@ export function createPersistOptions(): Omit<PersistQueryClientOptions, 'queryCl
   return {
     persister: {
       ...storage,
-      // The persister dates a copy by the moment it was written, and a write happens on any cache change,
-      // such as opening the app. That would restart the 7 days for movies that are already old, so a copy
-      // is dated by its oldest data instead.
-      persistClient: (client: PersistedClient) =>
-        storage.persistClient({ ...client, timestamp: oldestData(client) }),
+      // The provider discards a whole copy once it is older than the max age, and the copy is dated by its
+      // last write. A copy also holds queries of different ages: a detail opened a week ago sits beside a
+      // list refreshed yesterday. Each saved query expires on its own age, so an old detail is dropped and
+      // never takes the fresher queries with it.
+      restoreClient: async () => {
+        const client = await storage.restoreClient();
+        return client && withoutExpiredQueries(client);
+      },
     },
     maxAge: PERSIST_MAX_AGE,
     // A new app version may change the shape of the cached data, so it starts with an empty cache
@@ -89,7 +92,8 @@ export function createPersistOptions(): Omit<PersistQueryClientOptions, 'queryCl
   };
 }
 
-function oldestData(client: PersistedClient) {
-  const updatedAt = client.clientState.queries.map((query) => query.state.dataUpdatedAt);
-  return updatedAt.length > 0 ? Math.min(...updatedAt) : client.timestamp;
+function withoutExpiredQueries(client: PersistedClient): PersistedClient {
+  const oldestAllowed = Date.now() - PERSIST_MAX_AGE;
+  const queries = client.clientState.queries.filter((query) => query.state.dataUpdatedAt >= oldestAllowed);
+  return { ...client, clientState: { ...client.clientState, queries } };
 }

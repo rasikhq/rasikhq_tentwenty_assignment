@@ -4,7 +4,6 @@ import type { ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { MovieDetail } from '../api/types';
 import { BackButton } from '../components/BackButton';
 import { Chip } from '../components/Chip';
 import { ErrorState } from '../components/ErrorState';
@@ -12,6 +11,7 @@ import { ImageStrip } from '../components/ImageStrip';
 import { MovieDetailSkeleton } from '../components/MovieDetailSkeleton';
 import { MovieHero } from '../components/MovieHero';
 import { OfflineBanner } from '../components/OfflineBanner';
+import { OfflineState } from '../components/OfflineState';
 import { Skeleton } from '../components/Skeleton';
 import { Text } from '../components/Text';
 import { useIsOnline } from '../hooks/useIsOnline';
@@ -20,11 +20,10 @@ import { isBookable } from '../lib/bookable';
 import { formatDate } from '../lib/dates';
 import { errorMessage } from '../lib/errorMessage';
 import { useIsWide } from '../lib/layout';
-import { recheckConnection } from '../lib/nativeManagers';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 
 /** "In Theaters <date>" for a bookable movie, "Released <date>" for any other, and nothing without a date. */
-function releaseLine({ releaseDate }: MovieDetail): string | null {
+function releaseLine(releaseDate: string | null): string | null {
   if (releaseDate === null) return null;
   return `${isBookable(releaseDate) ? 'In Theaters' : 'Released'} ${formatDate(releaseDate)}`;
 }
@@ -44,7 +43,7 @@ export function MovieDetailScreen({
   const isWaitingForConnection = !detail && fetchStatus === 'paused';
   const isLoading = !detail && !error && !isWaitingForConnection;
 
-  const release = detail && releaseLine(detail);
+  const release = detail && releaseLine(detail.releaseDate);
   const hero = (
     <MovieHero title={shown.title} backdropPath={shown.backdropPath} fill={isWide}>
       {release && <Text variant="heroSubtitle">{release}</Text>}
@@ -74,15 +73,10 @@ export function MovieDetailScreen({
     );
   } else if (isWaitingForConnection) {
     content = (
-      <ErrorState
+      <OfflineState
         inline
-        title="You're offline"
         message="Connect to the internet to load this movie's details."
-        // The connection may have returned without the app hearing of it, so Retry checks it again
-        onRetry={() => {
-          void recheckConnection();
-          void refetch();
-        }}
+        onRetry={() => void refetch()}
       />
     );
   } else if (error) {
@@ -100,7 +94,8 @@ export function MovieDetailScreen({
 
   return (
     <View className="flex-1 bg-off-white">
-      {/* In portrait the image runs under the status bar, so its icons go light. Wide, the halves start below it, over the page. */}
+      {/* Portrait: the image runs under the status bar, so its icons go light.
+          Wide: the halves start below it, over the page. */}
       <StatusBar style={isWide ? 'dark' : 'light'} />
       {isWide ? (
         // The image takes the left half, and the content scrolls beside it
