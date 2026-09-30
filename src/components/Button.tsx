@@ -13,15 +13,19 @@ type ButtonProps = {
   label: string;
   onPress: () => void;
   variant?: keyof typeof variants;
+  /** Dimmed, and ignores presses. */
+  disabled?: boolean;
 };
 
 /** The Figma's buttons. Variants are added as screens need them. */
-export function Button({ label, onPress, variant = 'filled' }: ButtonProps) {
+export function Button({ label, onPress, variant = 'filled', disabled = false }: ButtonProps) {
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={onPress}
-      className={`min-h-12 items-center justify-center rounded-full px-6 active:opacity-80 ${variants[variant].button}`}
+      className={`min-h-12 items-center justify-center rounded-full px-6 active:opacity-80 ${variants[variant].button} ${disabled ? 'opacity-50' : ''}`}
     >
       <Text variant={variants[variant].text}>{label}</Text>
     </Pressable>

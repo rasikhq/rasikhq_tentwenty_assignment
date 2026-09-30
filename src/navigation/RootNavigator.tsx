@@ -1,10 +1,12 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import type { Movie, Trailer } from '../api/types';
+import type { Showtime } from '../lib/showtime';
 import { MovieDetailScreen } from '../screens/MovieDetailScreen';
 import { MovieListScreen } from '../screens/MovieListScreen';
 import { ResultsScreen } from '../screens/ResultsScreen';
 import { SearchScreen } from '../screens/SearchScreen';
+import { SeatMapScreen } from '../screens/SeatMapScreen';
 import { TrailerScreen } from '../screens/TrailerScreen';
 
 export type RootStackParamList = {
@@ -18,6 +20,8 @@ export type RootStackParamList = {
   /** The movie as the screen that opened it knows it: its image and title show until the detail arrives. */
   MovieDetail: { movie: Movie };
   Trailer: { trailer: Trailer };
+  /** The showtime to pick seats for, with the title of its movie for the header. */
+  SeatMap: { title: string; showtime: Showtime };
 };
 
 // Types useNavigation() and <Link> across the app without passing the param list around
@@ -40,6 +44,7 @@ export function RootNavigator() {
       <Stack.Screen name="MovieDetail" component={MovieDetailScreen} />
       {/* Covers the whole screen and, like every screen, turns with the device */}
       <Stack.Screen name="Trailer" component={TrailerScreen} options={{ presentation: 'fullScreenModal' }} />
+      <Stack.Screen name="SeatMap" component={SeatMapScreen} />
     </Stack.Navigator>
   );
 }

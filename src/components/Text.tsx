@@ -3,6 +3,8 @@ import { Text as NativeText, type TextProps as NativeTextProps } from 'react-nat
 // Variants are added as screens need them
 const variants = {
   title: 'font-poppins-medium text-base text-ink',
+  // Under a header bar's title. Grey, where the Figma's sky blue would be too faint to read on white.
+  headerDetail: 'font-poppins-medium text-xs text-grey',
   cardTitle: 'font-poppins-medium text-lg text-white',
   heroTitle: 'font-poppins-semibold text-xl text-white',
   heroSubtitle: 'font-poppins text-sm text-white',
@@ -17,6 +19,12 @@ const variants = {
   stateTitleOnDark: 'text-center font-poppins-semibold text-lg text-white',
   stateMessageOnDark: 'text-center font-poppins text-sm text-white',
   banner: 'text-center font-poppins text-xs text-white',
+  // The seat map's small print: a row's number, and the word under the screen's arc
+  hallLabel: 'font-poppins-medium text-2xs text-grey',
+  legend: 'font-poppins-medium text-xs text-grey',
+  totalLabel: 'font-poppins text-2xs text-ink',
+  total: 'font-poppins-semibold text-base text-ink',
+  toast: 'text-center font-poppins-medium text-xs text-white',
   // Ink on sky blue reads clearly, where the white text of some Figma buttons would not
   button: 'font-poppins-medium text-sm text-ink',
   buttonOnDark: 'font-poppins-medium text-sm text-white',

@@ -21,6 +21,7 @@ import { isBookable } from '../lib/bookable';
 import { formatDate } from '../lib/dates';
 import { errorMessage } from '../lib/errorMessage';
 import { useIsWide } from '../lib/layout';
+import { showtimeFor } from '../lib/showtime';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 
 /** "In Theaters <date>" for a bookable movie, "Released <date>" for any other, and nothing without a date. */
@@ -45,19 +46,34 @@ export function MovieDetailScreen({
   const isLoading = !detail && !error && !isWaitingForConnection;
 
   const release = detail && releaseLine(detail.releaseDate);
+  // Only a bookable movie has a showtime to get tickets for
+  const bookableFrom = detail && isBookable(detail.releaseDate) ? detail.releaseDate : null;
   // A detail saved before the app read trailers has none
   const trailer = detail?.trailer;
   const hero = (
     <MovieHero title={shown.title} backdropPath={shown.backdropPath} fill={isWide}>
       {release && <Text variant="heroSubtitle">{release}</Text>}
       {isLoading && <Skeleton className="h-5 w-[160px] rounded" />}
-      {trailer && (
-        <View className="flex-row pt-2">
-          <Button
-            variant="outline"
-            label="Watch Trailer"
-            onPress={() => navigation.navigate('Trailer', { trailer })}
-          />
+      {(bookableFrom || trailer) && (
+        <View className="flex-row flex-wrap gap-3 pt-2">
+          {bookableFrom && (
+            <Button
+              label="Get Tickets"
+              onPress={() =>
+                navigation.navigate('SeatMap', {
+                  title: shown.title,
+                  showtime: showtimeFor(shown.id, bookableFrom),
+                })
+              }
+            />
+          )}
+          {trailer && (
+            <Button
+              variant="outline"
+              label="Watch Trailer"
+              onPress={() => navigation.navigate('Trailer', { trailer })}
+            />
+          )}
         </View>
       )}
     </MovieHero>

@@ -121,6 +121,36 @@ test('Watch Trailer is hidden for a movie with no trailer', async () => {
   expect(screen.queryByRole('button', { name: 'Watch Trailer' })).not.toBeOnTheScreen();
 });
 
+test('Movie detail offers Get Tickets for a bookable movie', async () => {
+  // Far enough ahead to stay upcoming for as long as the tests are run
+  const detail = tmdbMovieDetail({ release_date: '2099-12-22' });
+  serveMovieDetail(detail);
+
+  await openMovie(detail);
+
+  expect(await screen.findByRole('button', { name: 'Get Tickets' })).toBeOnTheScreen();
+});
+
+test('Get Tickets is hidden for an old movie', async () => {
+  const detail = tmdbMovieDetail({ release_date: '2021-12-22' });
+  serveMovieDetail(detail);
+
+  await openMovie(detail);
+
+  expect(await screen.findByText('Released December 22, 2021')).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: 'Get Tickets' })).not.toBeOnTheScreen();
+});
+
+test('Get Tickets is hidden for a movie without a release date', async () => {
+  const detail = tmdbMovieDetail({ overview: 'Coming at some point.', release_date: '' });
+  serveMovieDetail(detail);
+
+  await openMovie(detail);
+
+  expect(await screen.findByText('Coming at some point.')).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: 'Get Tickets' })).not.toBeOnTheScreen();
+});
+
 test('Movie detail shows placeholder sections while the details load', async () => {
   const answer = gate();
   const detail = tmdbMovieDetail({ overview: 'Loaded at last.' });

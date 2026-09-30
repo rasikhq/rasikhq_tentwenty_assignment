@@ -17,7 +17,7 @@ Tests prove behaviour the way a user meets it. The full approach is under "Testi
   - Other apps: React Native's own `Linking` Jest mock. A test asserts on `Linking.openURL` only where the app hands a link to the phone, such as Open in YouTube.
 - A new native module gets its library's official Jest mock in `src/test/setup.ts`.
 - Jest has no layout pass, so a FlashList renders in a fixed 400 x 900 window with 100-high rows (`src/test/setup.ts`). A page of `fullPage()` (20 movies) overflows it: `user.scrollTo(list, { y: 1100 })` reaches its end, and `pullToRefresh(list)` from `src/test/pullToRefresh.ts` pulls it down. Tests start in a phone-sized portrait window, so a screen is narrow unless a test says otherwise.
-- Unit-test directly only the rules with many cases: trailer pick, bookable movie, hall layout to numbered seats, search term normalization.
+- Unit-test directly only the rules with many cases: trailer pick, bookable movie, hall layout to numbered seats, unavailable seats for a showtime, search term normalization.
 
 ## API boundary
 
