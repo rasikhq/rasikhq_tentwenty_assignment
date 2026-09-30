@@ -43,7 +43,7 @@ Other findings:
 - **Embed requirements for ticket 07:** the player must be at least 200 by 200 pt, visible before it autoplays, and have nothing drawn on top of it. The close button must sit outside the WebView, for example in a bar above it, not floating over the video.
 - **Jest:** `react-native-webview` ships no Jest mock, and importing it under Jest throws at load (`TurboModuleRegistry.getEnforcing`). The prototype branch stubs it in `src/test/setup.ts`. Ticket 07's tests replace the trailer player component with a fake, so the WebView should never be imported in tests.
 
-**Recommendation: B, our own WebView player.** It is the only candidate that autoplays on both platforms. It reports offline, and it sends our app id as the referrer by design. It adds only `react-native-webview`, which Expo pins and maintains. The cost is about 100 lines of our own, following the same official IFrame API that A wraps.
+**Recommendation: B, our own WebView player.** The user approved it after reviewing these findings, and ADR-0005 records the decision. It is the only candidate that autoplays on both platforms. It reports offline, and it sends our app id as the referrer by design. It adds only `react-native-webview`, which Expo pins and maintains. The cost is about 100 lines of our own, following the same official IFrame API that A wraps.
 
 The rejected alternative, `react-native-youtube-iframe`, fails the brief's autoplay on Android in every setup and stays silent offline. Its default page breaks YouTube's referrer rule and depends on the maintainer's GitHub Pages at runtime, and it hasn't had a release in 15 months.
 
