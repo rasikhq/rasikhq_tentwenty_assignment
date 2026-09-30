@@ -42,8 +42,8 @@ test('unavailable seats are spread through the hall, not bunched in a row or a r
   const rowsWithBoth = new Set<number>();
   for (let row = 1; row <= 10; row += 1) {
     const inRow = seats.filter((seat) => seat.row === row);
-    const taken = inRow.filter((seat) => unavailable.has(seat.id)).length;
-    if (taken > 0 && taken < inRow.length) rowsWithBoth.add(row);
+    const unavailableInRow = inRow.filter((seat) => unavailable.has(seat.id)).length;
+    if (unavailableInRow > 0 && unavailableInRow < inRow.length) rowsWithBoth.add(row);
   }
 
   expect(rowsWithBoth.size).toBe(10);

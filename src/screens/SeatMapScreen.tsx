@@ -41,14 +41,22 @@ export function SeatMapScreen({ route, navigation }: NativeStackScreenProps<Root
   // the screen is open, so the seats keep their identity and only a changed seat renders again.
   const rows = useMemo(() => layOutHall(hall), [hall]);
   const unavailableIds = useMemo(() => unavailableSeatIds(showtime, seatsOf(rows)), [showtime, rows]);
-  // The hall area's width is measured. Until its first layout it is worked out from the window, which
-  // gives the same width, so the first frame is already right. Jest has no layout pass and stays on this.
-  const [measuredWidth, setMeasuredWidth] = useState<number>();
-  const hallAreaWidth = measuredWidth ?? window.width - insets.left - insets.right;
+  // The hall area's width is measured. Until it is measured in this window, such as on the first
+  // frame and the first one after a rotation, it is worked out from the window, which gives the same
+  // width, so those frames are already right. Jest has no layout pass and stays on this.
+  const [measured, setMeasured] = useState<{ width: number; windowWidth: number }>();
+  const hallAreaWidth =
+    measured?.windowWidth === window.width ? measured.width : window.width - insets.left - insets.right;
   const zoom = useZoom(slotSizeToFit(rows, hallAreaWidth - 2 * HALL_MARGIN));
   // A scroll view scrolls one way, so the hall sits in two, one inside the other
   const scrollDown = useKeepCentre('y');
   const scrollAcross = useKeepCentre('x');
+  /** Takes a step of the zoom, with what is at the middle of the hall area kept there. */
+  const changeZoom = (step: () => void) => {
+    scrollDown.holdCentre();
+    scrollAcross.holdCentre();
+    step();
+  };
   const selectedIds = useMemo(() => new Set(selection.seats.map((seat) => seat.id)), [selection.seats]);
   const total = selection.seats.reduce((sum, seat) => sum + SEAT_TYPES[seat.seatType].price, 0);
   // A wide window has room beside things, and a phone on its side has no height to spare: either way
@@ -62,7 +70,7 @@ export function SeatMapScreen({ route, navigation }: NativeStackScreenProps<Root
       showsHorizontalScrollIndicator={false}
       accessibilityLabel="Selected seats"
       className="h-8 grow-0"
-      contentContainerStyle={{ gap: 8, alignItems: 'center' }}
+      contentContainerClassName="items-center gap-2"
     >
       {selection.seats.length === 0 && <Text variant="legend">No seats selected</Text>}
       {selection.seats.map((seat) => (
@@ -108,10 +116,13 @@ export function SeatMapScreen({ route, navigation }: NativeStackScreenProps<Root
         The hall takes the height the rest leaves, and scrolls inside it both ways, so the page never
         scrolls. A hall smaller than its area sits in the middle of it.
       */}
-      <View className="flex-1" onLayout={(event) => setMeasuredWidth(event.nativeEvent.layout.width)}>
-        <ScrollView {...scrollDown} contentContainerStyle={{ flexGrow: 1 }}>
+      <View
+        className="flex-1"
+        onLayout={(event) => setMeasured({ width: event.nativeEvent.layout.width, windowWidth: window.width })}
+      >
+        <ScrollView {...scrollDown.scrollViewProps} contentContainerClassName="grow">
           <ScrollView
-            {...scrollAcross}
+            {...scrollAcross.scrollViewProps}
             horizontal
             contentContainerStyle={{
               flexGrow: 1,
@@ -135,12 +146,16 @@ export function SeatMapScreen({ route, navigation }: NativeStackScreenProps<Root
         <ZoomControls
           canZoomOut={zoom.canZoomOut}
           canZoomIn={zoom.canZoomIn}
-          onZoomOut={zoom.zoomOut}
-          onZoomIn={zoom.zoomIn}
+          onZoomOut={() => changeZoom(zoom.zoomOut)}
+          onZoomIn={() => changeZoom(zoom.zoomIn)}
         />
         {/* Over the bottom of the hall, above the zoom controls. A new key for each refusal starts the toast again. */}
         {selection.refusals > 0 && (
-          <Toast key={selection.refusals} message={`You can pick up to ${MAX_SELECTION} seats`} />
+          <Toast
+            key={selection.refusals}
+            message={`You can pick up to ${MAX_SELECTION} seats`}
+            bottom={ZOOM_CONTROLS_ROOM}
+          />
         )}
       </View>
       <SeatLegend compact={isCompact} />
