@@ -16,7 +16,7 @@
   - pointers to CLAUDE.md, the planning notes, the ADRs and the steering log.
 - [x] A release APK is built locally from the generated Android project, signed with the debug keystore, installed and smoke-tested on the emulator. No keystore is committed.
 - [ ] The APK is attached to a GitHub release and linked from the demo folder (or committed there if small enough).
-- [ ] The demo folder holds the screen recording, recorded by the developer.
+- [x] The demo folder holds the screen recording, recorded by the developer.
 - [x] If time allows, an iOS simulator build is zipped into the demo folder.
 - [ ] `npm run check` and CI are green on the release commit.
 
@@ -38,10 +38,10 @@
 - Found in the smoke test: the first trailer opened after the emulator's cold boot showed "This trailer can't play here" about 12 seconds after opening. The WebView's first start took longer than the player's `READY_TIMEOUT_MS` (12 seconds). Retry played the trailer, and after a relaunch the trailer played within 10 seconds. The machine was also under load from the builds. Nothing was changed. The README's trade-offs and `demo/README.md` say so.
 - `npm run check` passes (typecheck, lint with no warnings, 194 tests). No code changed in this ticket.
 - The development builds on the emulator and on both simulators are replaced by the release builds. `npm run android` and `npm run ios` install the development builds again.
+- The screen recording is `demo/demo.mp4`, recorded by the user with OBS: 3 minutes 13 seconds, 18.6 MB, H.264 at 1800 x 1168 and 60 frames a second, with a silent audio track (the devices were muted). It shows the release builds side by side, with no development-tools bubble on either: the APK on the Pixel 9 Pro emulator in portrait, and the iOS build on the iPhone 16 simulator (iOS 18.5) in landscape. Seen in its frames: Movie list, Movie detail, the trailer playing on both, the seat map with a selection, its chips and the summary, the genre grid (four columns on iOS), a genre's Results, and Top Results for "toy story". So the seat map and Search are now seen on iOS 18.5, and in landscape. It is committed: the demos live in `demo/`, and only the two builds go on the release. Both READMEs point to it.
 
 ## Left for the user
 
 - Review the README and the demo folder before anything is public. Nothing is pushed: the repository has no remote.
 - Create the public repository (`<name>_tentwenty_assignment`), push `main` and `prototype/trailer`, and create the release `v1.0.0` with `demo/tmdb-movies-1.0.0.apk` and `demo/tmdb-movies-1.0.0-ios-simulator.zip`. Then check the link in `demo/README.md` and the CI run on the release commit.
-- Record the screen recording into the demo folder, and add its line to `demo/README.md` and the README's Demo section.
 - The builds hold the TMDb token. Publishing them publishes the token, as the spec accepts for a read-only token.

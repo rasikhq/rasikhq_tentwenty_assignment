@@ -16,6 +16,8 @@ Every screen has a loading skeleton, an empty state, an error state with Retry, 
 
 ## Demo
 
+[demo/demo.mp4](demo/demo.mp4) is the screen recording (about 3 minutes, no sound): the Android build in portrait beside the iOS build in landscape.
+
 The installable builds are attached to the GitHub release `v1.0.0`, and [demo/README.md](demo/README.md) links to it and says how to install them and what was checked with them:
 
 - Android: `tmdb-movies-1.0.0.apk`, a release APK (85 MB).
@@ -139,7 +141,7 @@ src/
   - iPhone 16 simulator, iOS 18.5
   - Pixel 9 Pro emulator, Android 15 (API 35)
 
-  Each feature was checked as it was built: on the emulator in portrait and landscape, and on the iOS 26.5 simulator, where landscape was seen on some screens only. Each ticket records what was and wasn't seen. The iOS 18.5 simulator ran the release build only: Movie list, Movie detail and the trailer.
+  Each feature was checked as it was built: on the emulator in portrait and landscape, and on the iOS 26.5 simulator, where landscape was seen on some screens only. Each ticket records what was and wasn't seen. The iOS 18.5 simulator ran the release build only: Movie list, Movie detail and the trailer in portrait, and every screen in landscape, in the screen recording.
 - **Not tested**: a physical device, an iOS 15, 16 or 17 runtime (didn't install them), an API 36 emulator, a tablet, and a screen reader. Seats, cards, buttons, chips and tiles carry accessibility labels and states, and the tests find them by role and label, but nobody has listened to VoiceOver or TalkBack read them.
 
 ## Trade-offs

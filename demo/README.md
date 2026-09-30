@@ -1,10 +1,15 @@
 # Demo
 
+## Screen recording
+
+[`demo.mp4`](demo.mp4) (3 minutes 13 seconds, no sound) shows the two release builds side by side: the APK on the Pixel 9 Pro emulator in portrait, and the iOS build on the iPhone 16 simulator (iOS 18.5) in landscape. It goes through Movie list, Movie detail, the trailer, the seat map with a selection and its summary, the genre grid, a genre's Results, and Top Results for a search.
+
+# Release Builds
+
 Release builds of version 1.0.0, built on 2026-09-30 from the source at commit `e5dd502`. They need no Metro and no `.env`: the JavaScript bundle and the TMDb token are inside them (see "The token" in the [README](../README.md)).
 
 > **Important Note**: The TMDb token bundled in the release builds will stop working roughly 3-5 days after the release date, for security.
 
-# Release Builds
 Builds are available in the GitHub release [v1.0.0](../../../releases/tag/v1.0.0).
 
 ## Android APK
@@ -38,7 +43,7 @@ Or drag `TMDbMovies.app` onto a running simulator.
 Each was installed fresh (the development build removed first) and run against TMDb's real data.
 
 - **APK, Pixel 9 Pro emulator (Android 15, API 35):** Movie list loads; a card opens Movie detail; Watch Trailer plays by itself; Get Tickets opens the seat map, two seats select with their chips and a $200 total, + zooms, and Proceed to pay shows the summary; Search shows the genre grid, then Top Results for "Dune"; the search key opens Results ("1111 Results Found"), in two columns in landscape; in airplane mode, after a restart, Movie list shows the saved movies under the offline banner.
-- **iOS build, iPhone 16 simulator (iOS 18.5):** Movie list loads; a card opens Movie detail; Watch Trailer plays by itself.
+- **iOS build, iPhone 16 simulator (iOS 18.5):** Movie list loads; a card opens Movie detail; Watch Trailer plays by itself. The screen recording adds, in landscape: the seat map with a selection and its summary, the genre grid in four columns, a genre's Results and Top Results in two columns.
 - **iOS build, iPhone 17 Pro simulator (iOS 26.5):** Movie list loads.
 
 One thing to know: on the emulator, the first trailer opened after a cold boot showed "This trailer can't play here". The WebView took longer to start than the 12 seconds the player waits. Retry played it, and so did the next launch.
