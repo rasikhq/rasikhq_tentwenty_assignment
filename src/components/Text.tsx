@@ -6,6 +6,7 @@ const variants = {
   cardTitle: 'font-poppins-medium text-lg text-white',
   stateTitle: 'text-center font-poppins-semibold text-lg text-ink',
   stateMessage: 'text-center font-poppins text-sm text-ink',
+  banner: 'text-center font-poppins text-xs text-white',
   // Ink on sky blue reads clearly, where the white text of some Figma buttons would not
   button: 'font-poppins-medium text-sm text-ink',
 };

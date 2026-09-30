@@ -8,7 +8,9 @@ import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { MovieCard } from '../components/MovieCard';
 import { MovieListSkeleton } from '../components/MovieListSkeleton';
+import { OfflineBanner } from '../components/OfflineBanner';
 import { Screen } from '../components/Screen';
+import { useIsOnline } from '../hooks/useIsOnline';
 import { useUpcomingMovies } from '../hooks/useUpcomingMovies';
 import { errorMessage } from '../lib/errorMessage';
 import { useColumnCount } from '../lib/layout';
@@ -27,12 +29,14 @@ export function MovieListScreen() {
   const {
     data: movies,
     error,
+    fetchStatus,
     refetch,
     hasNextPage,
     isFetchingNextPage,
     isFetchNextPageError,
     fetchNextPage,
   } = useUpcomingMovies();
+  const isOnline = useIsOnline();
   const insets = useSafeAreaInsets();
   const columns = useColumnCount();
   // The first movie on screen. A new column count starts a new list, which opens at this movie
@@ -63,32 +67,44 @@ export function MovieListScreen() {
     }
 
     content = (
-      <FlashList
-        // FlashList keeps the old row sizes when its column count changes, which left a gap between
-        // two cards after rotating, so a new column count starts a new list
-        key={columns}
-        initialScrollIndex={firstVisibleIndex.current}
-        viewabilityConfig={viewabilityConfig}
-        onViewableItemsChanged={({ viewableItems }) => {
-          firstVisibleIndex.current = viewableItems[0]?.index ?? 0;
-        }}
-        accessibilityLabel="Upcoming movies"
-        // The list scrolls under the home indicator, so its end pads by the bottom inset
-        contentContainerStyle={{ padding: 8, paddingBottom: 8 + insets.bottom }}
-        data={movies}
-        renderItem={renderMovie}
-        numColumns={columns}
-        ListEmptyComponent={
-          <EmptyState title="No upcoming movies right now" message="Pull down to check again." />
-        }
-        ListFooterComponent={footer}
-        refreshing={isRefreshing}
-        onRefresh={() => void refresh()}
-        onEndReached={() => {
-          if (hasNextPage && !isFetchingNextPage && !isFetchNextPageError) {
-            void fetchNextPage();
+      <>
+        {!isOnline && <OfflineBanner />}
+        <FlashList
+          // FlashList keeps the old row sizes when its column count changes, which left a gap between
+          // two cards after rotating, so a new column count starts a new list
+          key={columns}
+          initialScrollIndex={firstVisibleIndex.current}
+          viewabilityConfig={viewabilityConfig}
+          onViewableItemsChanged={({ viewableItems }) => {
+            firstVisibleIndex.current = viewableItems[0]?.index ?? 0;
+          }}
+          accessibilityLabel="Upcoming movies"
+          // The list scrolls under the home indicator, so its end pads by the bottom inset
+          contentContainerStyle={{ padding: 8, paddingBottom: 8 + insets.bottom }}
+          data={movies}
+          renderItem={renderMovie}
+          numColumns={columns}
+          ListEmptyComponent={
+            <EmptyState title="No upcoming movies right now" message="Pull down to check again." />
           }
-        }}
+          ListFooterComponent={footer}
+          refreshing={isRefreshing}
+          onRefresh={() => void refresh()}
+          onEndReached={() => {
+            if (hasNextPage && !isFetchingNextPage && !isFetchNextPageError) {
+              void fetchNextPage();
+            }
+          }}
+        />
+      </>
+    );
+  } else if (fetchStatus === 'paused') {
+    // Offline with nothing saved: the request waits for a connection, so no error ever arrives
+    content = (
+      <ErrorState
+        title="You're offline"
+        message="Connect to the internet to load upcoming movies."
+        onRetry={() => void refetch()}
       />
     );
   } else if (error) {

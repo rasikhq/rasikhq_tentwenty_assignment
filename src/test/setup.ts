@@ -1,13 +1,24 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { timeoutManager } from '@tanstack/react-query';
 import { cleanup } from '@testing-library/react-native';
 
+import { resetNetwork } from './network';
 import { server } from './server';
 import { TEST_TOKEN } from './tmdb';
 import { resetWindow } from './window';
 
 // Native modules have no native side in Jest, so each one gets its library's official mock as it arrives
-jest.mock('react-native-safe-area-context', () =>
-  jest.requireActual<{ default: unknown }>('react-native-safe-area-context/jest/mock').default,
+jest.mock(
+  'react-native-safe-area-context',
+  () => jest.requireActual<{ default: unknown }>('react-native-safe-area-context/jest/mock').default,
+);
+
+// The disk and the connection are faked at their libraries' own Jest mocks
+jest.mock('@react-native-async-storage/async-storage', () =>
+  jest.requireActual<object>('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
+jest.mock('@react-native-community/netinfo', () =>
+  jest.requireActual<object>('@react-native-community/netinfo/jest/netinfo-mock.js'),
 );
 
 // Jest has no layout pass, so FlashList measures nothing and renders no rows. This fixes the sizes it
@@ -31,8 +42,10 @@ timeoutManager.setTimeoutProvider({
 
 const unhandledRequests: string[] = [];
 
-beforeEach(() => {
+beforeEach(async () => {
   resetWindow();
+  resetNetwork();
+  await AsyncStorage.clear();
   // Jest doesn't load .env. Set on every test, so a test that deletes the token doesn't affect the next
   process.env.EXPO_PUBLIC_TMDB_TOKEN = TEST_TOKEN;
 });
@@ -57,6 +70,7 @@ beforeAll(() => {
 });
 
 afterEach(async () => {
+  jest.useRealTimers();
   // Unmount first, so a request the app sends while unmounting counts against this test
   await cleanup();
   server.resetHandlers();
