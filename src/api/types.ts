@@ -40,4 +40,6 @@ export type MovieDetail = Omit<Movie, 'genreIds'> & {
 export type Paged<T> = {
   items: T[];
   totalPages: number;
+  /** How many items the whole list has, across all its pages. */
+  totalResults: number;
 };

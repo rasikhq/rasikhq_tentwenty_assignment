@@ -16,7 +16,7 @@ import { SearchField } from '../components/SearchField';
 import { Text } from '../components/Text';
 import { useGenres } from '../hooks/useGenres';
 import { useIsOnline } from '../hooks/useIsOnline';
-import { useMovieSearch } from '../hooks/useMovieSearch';
+import { useTopResults } from '../hooks/useMovieSearch';
 import { errorMessage } from '../lib/errorMessage';
 import { firstGenreName } from '../lib/genres';
 import { useColumnCount } from '../lib/layout';
@@ -27,7 +27,7 @@ export function SearchScreen({ navigation }: NativeStackScreenProps<RootStackPar
   const [text, setText] = useState('');
   const term = normalizeSearchTerm(text);
   // The results for this term and no other: a term without results yet has none to show (ADR-0001)
-  const { data: results, error, refetch } = useMovieSearch(term);
+  const { data: results, error, refetch } = useTopResults(term);
   // Rows show without a genre until the genre list arrives, and when it can't be loaded
   const { data: genres } = useGenres();
   const isOnline = useIsOnline();
@@ -55,7 +55,7 @@ export function SearchScreen({ navigation }: NativeStackScreenProps<RootStackPar
   let content: ReactNode;
   if (term === '') {
     content = <EmptyState title="Find a movie" message="Search for a movie by its title." />;
-  } else if (results?.items.length === 0) {
+  } else if (results?.length === 0) {
     content = <EmptyState title={`No movies match '${text.trim()}'`} message="Try different words." />;
   } else if (results) {
     content = (
@@ -72,7 +72,7 @@ export function SearchScreen({ navigation }: NativeStackScreenProps<RootStackPar
           // A tap on a row opens its movie even while the keyboard is up, and scrolling puts the keyboard away
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
-          data={results.items}
+          data={results}
           renderItem={renderMovie}
           numColumns={columns}
           ListHeaderComponent={
@@ -112,8 +112,18 @@ export function SearchScreen({ navigation }: NativeStackScreenProps<RootStackPar
     );
   }
 
+  function openResults() {
+    // Text with nothing but spaces has no term to search for
+    if (term === '') return;
+    navigation.navigate('Results', { kind: 'search', text: text.trim() });
+  }
+
   return (
-    <Screen header={<SearchField value={text} onChangeText={setText} onClose={navigation.goBack} />}>
+    <Screen
+      header={
+        <SearchField value={text} onChangeText={setText} onSubmit={openResults} onClose={navigation.goBack} />
+      }
+    >
       {content}
     </Screen>
   );

@@ -3,12 +3,18 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { Movie, Trailer } from '../api/types';
 import { MovieDetailScreen } from '../screens/MovieDetailScreen';
 import { MovieListScreen } from '../screens/MovieListScreen';
+import { ResultsScreen } from '../screens/ResultsScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { TrailerScreen } from '../screens/TrailerScreen';
 
 export type RootStackParamList = {
   MovieList: undefined;
   Search: undefined;
+  /**
+   * What Results lists, told apart by `kind`: the movies that match a search, with the search as the user
+   * typed it, trimmed. Ticket 12 adds a genre's movies as a second kind.
+   */
+  Results: { kind: 'search'; text: string };
   /** The movie as the screen that opened it knows it: its image and title show until the detail arrives. */
   MovieDetail: { movie: Movie };
   Trailer: { trailer: Trailer };
@@ -30,6 +36,7 @@ export function RootNavigator() {
     <Stack.Navigator initialRouteName="MovieList" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MovieList" component={MovieListScreen} />
       <Stack.Screen name="Search" component={SearchScreen} />
+      <Stack.Screen name="Results" component={ResultsScreen} />
       <Stack.Screen name="MovieDetail" component={MovieDetailScreen} />
       {/* Covers the whole screen and, like every screen, turns with the device */}
       <Stack.Screen name="Trailer" component={TrailerScreen} options={{ presentation: 'fullScreenModal' }} />

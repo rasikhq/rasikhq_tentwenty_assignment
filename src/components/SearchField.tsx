@@ -6,6 +6,8 @@ import { Magnifier } from './icons/Magnifier';
 type SearchFieldProps = {
   value: string;
   onChangeText: (text: string) => void;
+  /** The keyboard's search key was pressed. */
+  onSubmit: () => void;
   /** Leaves Search. The field's button does this when there is no text to clear. */
   onClose: () => void;
 };
@@ -14,7 +16,7 @@ type SearchFieldProps = {
  * The Figma's search field: a pill with the search icon, the text, and one button. The button clears the
  * text when there is text and closes Search when the field is empty.
  */
-export function SearchField({ value, onChangeText, onClose }: SearchFieldProps) {
+export function SearchField({ value, onChangeText, onSubmit, onClose }: SearchFieldProps) {
   const hasText = value !== '';
 
   return (
@@ -29,6 +31,7 @@ export function SearchField({ value, onChangeText, onClose }: SearchFieldProps) 
         autoCapitalize="none"
         autoCorrect={false}
         returnKeyType="search"
+        onSubmitEditing={onSubmit}
         // A font size without the line height of text-sm, which iOS adds below the text of an input.
         // Android pads an input by itself, which would push the text off centre.
         className="flex-1 px-3 py-0 font-poppins text-[14px] text-ink placeholder:text-grey"

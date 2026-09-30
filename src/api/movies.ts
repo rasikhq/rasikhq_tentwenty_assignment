@@ -17,18 +17,22 @@ function toMovie(movie: TmdbMovie): Movie {
   };
 }
 
+function toMoviePage(body: TmdbPage<TmdbMovie>): Paged<Movie> {
+  return { items: body.results.map(toMovie), totalPages: body.total_pages, totalResults: body.total_results };
+}
+
 export async function fetchUpcomingMovies(page: number, signal: AbortSignal): Promise<Paged<Movie>> {
   const body = await tmdbGet<TmdbPage<TmdbMovie>>('/movie/upcoming', {
     params: { page, region: UPCOMING_REGION },
     signal,
   });
-  return { items: body.results.map(toMovie), totalPages: body.total_pages };
+  return toMoviePage(body);
 }
 
-/** The first page of the movies that match a search term. */
-export async function searchMovies(term: string, signal: AbortSignal): Promise<Paged<Movie>> {
-  const body = await tmdbGet<TmdbPage<TmdbMovie>>('/search/movie', { params: { query: term }, signal });
-  return { items: body.results.map(toMovie), totalPages: body.total_pages };
+/** One page of the movies that match a search term. */
+export async function searchMovies(term: string, page: number, signal: AbortSignal): Promise<Paged<Movie>> {
+  const body = await tmdbGet<TmdbPage<TmdbMovie>>('/search/movie', { params: { query: term, page }, signal });
+  return toMoviePage(body);
 }
 
 function toMovieDetail(movie: TmdbMovieDetail): MovieDetail {

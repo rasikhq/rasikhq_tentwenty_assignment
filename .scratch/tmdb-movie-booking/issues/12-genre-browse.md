@@ -20,3 +20,11 @@
 - The genre list is already fetched and persisted: `useGenres()`, stale after 7 days. A saved copy is dropped on restore once it is 7 days old (`withoutExpiredQueries`), so offline after 7 days there is no genre list and the grid would be empty.
 - List movies carry `genreIds` since ticket 08. An upcoming list saved before that has movies without it, and the cache buster wasn't bumped, so a tile's image lookup must allow for a saved movie with no `genreIds` (or bump the app version).
 - Search's idle state is an `EmptyState` prompt in `SearchScreen`, which the grid replaces. A test that expects it: "Movie list's search button opens Search, which asks for a title before any typing".
+
+**2026-09-30, context from ticket 09**
+
+- Results' route params are `{ kind: 'search'; text: string }` (`RootStackParamList` in `src/navigation/RootNavigator.tsx`). A genre is a second kind, such as `{ kind: 'genre'; genre: Genre }`. `ResultsScreen` reads `text` and calls `useSearchResults()` directly, so it needs a branch, or a hook per kind behind one shape (`{ movies, total }`, with the infinite query's paging fields).
+- The header title comes from `resultsTitle(total)` in `ResultsScreen`. A genre shows its name instead.
+- `moviesOnce()` and `nextPageNumber()` in `src/lib/pages.ts` serve any paged movie list, and `toMoviePage()` in `src/api/movies.ts` maps any TMDb movie page.
+- The no-match, error, offline and banner texts in `ResultsScreen` speak of searching. A genre needs its own.
+- `serveSearch()` in `src/test/tmdb.ts` shows how a fake endpoint serves several pages per key.

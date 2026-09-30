@@ -5,6 +5,7 @@ import { controlDate, passDays } from '../test/clock';
 import { letDiskSettle } from '../test/disk';
 import { goOffline, goOnline } from '../test/network';
 import { renderApp } from '../test/renderApp';
+import { letSearchSettle } from '../test/search';
 import {
   gate,
   serveGenres,
@@ -35,14 +36,6 @@ async function openSearchAndType(text: string) {
   await renderApp({ name: 'Search' });
   await user.type(screen.getByPlaceholderText('Search movies'), text);
   return user;
-}
-
-/**
- * Waits longer than Search pauses after the last keystroke, so any request the app was going to send has
- * gone out and its answer has reached the screen. For a test that expects no request, or no change on screen.
- */
-function letSearchSettle() {
-  return new Promise((resolve) => setTimeout(resolve, SEARCH_DEBOUNCE_MS + 100));
 }
 
 test("Movie list's search button opens Search, which asks for a title before any typing", async () => {

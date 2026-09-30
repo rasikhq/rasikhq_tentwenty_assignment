@@ -135,16 +135,26 @@ type ServeSearchOptions = {
   fail?: Record<string, Failure>;
 };
 
+/** Whether a query's matches are given as pages, and not as the movies of its one page. */
+function isPaged(matches: TmdbMovie[] | TmdbMovie[][]): matches is TmdbMovie[][] {
+  return Array.isArray(matches[0]);
+}
+
 /**
- * Serves TMDb's movie search: the movies that match each query, as the one page of its results. A query
- * that isn't listed matches no movies. The result lists the queries that came in, in order, and the
- * queries whose request the app gave up on.
+ * Serves TMDb's movie search: the movies that match each query, as the one page of its results, or one
+ * array per page for a query with several. A query that isn't listed matches no movies. The result lists
+ * the query of every request that came in, in order, and the queries whose request the app gave up on.
  */
-export function serveSearch(matches: Record<string, TmdbMovie[]>, { hold = {}, fail = {} }: ServeSearchOptions = {}) {
+export function serveSearch(
+  matches: Record<string, TmdbMovie[] | TmdbMovie[][]>,
+  { hold = {}, fail = {} }: ServeSearchOptions = {},
+) {
   const served = { queries: [] as string[], cancelled: [] as string[] };
   server.use(
     http.get(`${BASE_URL}/search/movie`, async ({ request }) => {
-      const query = new URL(request.url).searchParams.get('query') ?? '';
+      const params = new URL(request.url).searchParams;
+      const query = params.get('query') ?? '';
+      const page = Number(params.get('page') ?? 1);
       served.queries.push(query);
       request.signal.addEventListener('abort', () => {
         served.cancelled.push(query);
@@ -157,8 +167,14 @@ export function serveSearch(matches: Record<string, TmdbMovie[]>, { hold = {}, f
       if (failure !== undefined) {
         return failureResponse(failure);
       }
-      const results = matches[query] ?? [];
-      const body: TmdbPage<TmdbMovie> = { page: 1, results, total_pages: 1, total_results: results.length };
+      const matched = matches[query] ?? [];
+      const pages = isPaged(matched) ? matched : [matched];
+      const body: TmdbPage<TmdbMovie> = {
+        page,
+        results: pages[page - 1] ?? [],
+        total_pages: pages.length,
+        total_results: pages.flat().length,
+      };
       return HttpResponse.json(body);
     }),
   );

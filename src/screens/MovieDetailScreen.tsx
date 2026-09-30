@@ -129,7 +129,7 @@ export function MovieDetailScreen({
       {/* A transparent header: only the back button, over the image */}
       <View className="absolute left-0 top-0 pl-safe pt-safe">
         <View className="p-2">
-          <BackButton onPress={navigation.goBack} />
+          <BackButton onImage onPress={navigation.goBack} />
         </View>
       </View>
     </View>

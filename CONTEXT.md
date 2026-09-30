@@ -30,11 +30,15 @@ _Avoid_: Query (TMDb's name for the request parameter), keyword
 The movies Search lists while the user types: the first page of matches for the current search term.
 _Avoid_: Suggestions, live results
 
+**Results**:
+The screen a submitted search opens: how many movies match the search term, and every match, with more loading as the user scrolls.
+_Avoid_: Search results screen, results page
+
 **Release line**:
 The movie detail's line under the title: "In Theaters <date>" for a bookable movie, "Released <date>" for any other.
 
 **Offline banner**:
-A slim note above saved movies, a saved movie detail, or Top Results from earlier in the session, saying the user is offline and the screen shows data from before.
+A slim note above saved movies, a saved movie detail, or Top Results or Results from earlier in the session, saying the user is offline and the screen shows data from before.
 
 **Offline state**:
 The message, with Retry, that takes a screen's content area offline when nothing is saved to show there.
