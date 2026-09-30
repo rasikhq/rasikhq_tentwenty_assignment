@@ -7,6 +7,8 @@ export type Movie = {
   title: string;
   /** TMDb's file path for the backdrop, or null when TMDb has none yet. imageUrl() turns it into a URL. */
   backdropPath: string | null;
+  /** The ids of the movie's genres, in TMDb's order. The genre list has their names. */
+  genreIds: number[];
 };
 
 /** A genre such as Comedy or Crime. */
@@ -21,8 +23,8 @@ export type Trailer = {
   videoKey: string;
 };
 
-/** A movie as its detail shows it: everything a list shows, and the rest. */
-export type MovieDetail = Movie & {
+/** A movie as its detail shows it: what a list shows, with its genres in full in place of their ids, and the rest. */
+export type MovieDetail = Omit<Movie, 'genreIds'> & {
   /** "2021-12-22", or null when TMDb has no release date. */
   releaseDate: string | null;
   genres: Genre[];

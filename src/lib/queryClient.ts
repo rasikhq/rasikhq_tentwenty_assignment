@@ -34,8 +34,13 @@ export function createQueryClient() {
   });
 }
 
-// What reaches the disk: the upcoming list, and the detail of every movie the user has opened
-const persistedQueries: readonly unknown[] = [queryKeyRoots.upcoming, queryKeyRoots.movieDetail];
+// What reaches the disk: the upcoming list, the detail of every movie the user has opened, and the genre
+// list. Search results stay in memory only (ADR-0001).
+const persistedQueries: readonly unknown[] = [
+  queryKeyRoots.upcoming,
+  queryKeyRoots.movieDetail,
+  queryKeyRoots.genres,
+];
 
 // The one place that decides what reaches the disk. Later tickets add their queries here. A query whose
 // refetch failed still holds its last data, which stays saved: a failed refresh must not wipe the copy.

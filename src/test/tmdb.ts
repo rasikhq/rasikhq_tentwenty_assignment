@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
 
-import type { TmdbMovie, TmdbMovieDetail, TmdbPage, TmdbVideo } from '../api/tmdbTypes';
+import type { TmdbGenre, TmdbGenreList, TmdbMovie, TmdbMovieDetail, TmdbPage, TmdbVideo } from '../api/tmdbTypes';
 import { server } from './server';
 
 /** The token the app runs with in tests. The fake TMDb only answers requests that carry it. */
@@ -13,7 +13,13 @@ let lastMovieId = 0;
 /** A movie as TMDb sends it. A test states only the fields it cares about. */
 export function tmdbMovie(overrides: Partial<TmdbMovie> = {}): TmdbMovie {
   lastMovieId += 1;
-  return { id: lastMovieId, title: `Movie ${lastMovieId}`, backdrop_path: '/backdrop.jpg', ...overrides };
+  return {
+    id: lastMovieId,
+    title: `Movie ${lastMovieId}`,
+    backdrop_path: '/backdrop.jpg',
+    genre_ids: [],
+    ...overrides,
+  };
 }
 
 /** A full page of TMDb results, 20 movies, which fills more than the screen. The given movies come last. */
@@ -106,6 +112,59 @@ export function stallUpcoming() {
   return request;
 }
 
+/** Serves TMDb's genre list to requests that carry the test token. The result counts the requests that came in. */
+export function serveGenres(genres: TmdbGenre[] = []) {
+  const served = { requests: 0 };
+  server.use(
+    http.get(`${BASE_URL}/genre/movie/list`, ({ request }) => {
+      served.requests += 1;
+      if (request.headers.get('Authorization') !== `Bearer ${TEST_TOKEN}`) {
+        return HttpResponse.json(invalidKey, { status: 401 });
+      }
+      const body: TmdbGenreList = { genres };
+      return HttpResponse.json(body);
+    }),
+  );
+  return served;
+}
+
+type ServeSearchOptions = {
+  /** Answers for these queries wait until the promise resolves, such as a gate's `opened`. */
+  hold?: Record<string, Promise<void>>;
+  /** Requests for these queries fail. */
+  fail?: Record<string, Failure>;
+};
+
+/**
+ * Serves TMDb's movie search: the movies that match each query, as the one page of its results. A query
+ * that isn't listed matches no movies. The result lists the queries that came in, in order, and the
+ * queries whose request the app gave up on.
+ */
+export function serveSearch(matches: Record<string, TmdbMovie[]>, { hold = {}, fail = {} }: ServeSearchOptions = {}) {
+  const served = { queries: [] as string[], cancelled: [] as string[] };
+  server.use(
+    http.get(`${BASE_URL}/search/movie`, async ({ request }) => {
+      const query = new URL(request.url).searchParams.get('query') ?? '';
+      served.queries.push(query);
+      request.signal.addEventListener('abort', () => {
+        served.cancelled.push(query);
+      });
+      await hold[query];
+      if (request.headers.get('Authorization') !== `Bearer ${TEST_TOKEN}`) {
+        return HttpResponse.json(invalidKey, { status: 401 });
+      }
+      const failure = fail[query];
+      if (failure !== undefined) {
+        return failureResponse(failure);
+      }
+      const results = matches[query] ?? [];
+      const body: TmdbPage<TmdbMovie> = { page: 1, results, total_pages: 1, total_results: results.length };
+      return HttpResponse.json(body);
+    }),
+  );
+  return served;
+}
+
 /** A video as TMDb lists it for a movie: an official YouTube trailer, unless a test says otherwise. */
 export function tmdbVideo(overrides: Partial<TmdbVideo> = {}): TmdbVideo {
   return { key: 'video-key', site: 'YouTube', type: 'Trailer', official: true, ...overrides };
@@ -113,8 +172,11 @@ export function tmdbVideo(overrides: Partial<TmdbVideo> = {}): TmdbVideo {
 
 /** A movie's full detail as TMDb sends it from /movie/{id}. A test states only the fields it cares about. */
 export function tmdbMovieDetail(overrides: Partial<TmdbMovieDetail> = {}): TmdbMovieDetail {
+  const { id, title, backdrop_path } = tmdbMovie();
   return {
-    ...tmdbMovie(),
+    id,
+    title,
+    backdrop_path,
     release_date: '2021-12-22',
     overview: 'An overview of the movie.',
     genres: [],

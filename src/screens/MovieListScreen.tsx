@@ -12,6 +12,8 @@ import { MovieListSkeleton } from '../components/MovieListSkeleton';
 import { OfflineBanner } from '../components/OfflineBanner';
 import { OfflineState } from '../components/OfflineState';
 import { Screen } from '../components/Screen';
+import { SearchButton } from '../components/SearchButton';
+import { Text } from '../components/Text';
 import { useIsOnline } from '../hooks/useIsOnline';
 import { useUpcomingMovies } from '../hooks/useUpcomingMovies';
 import { errorMessage } from '../lib/errorMessage';
@@ -124,5 +126,18 @@ export function MovieListScreen() {
     );
   }
 
-  return <Screen title="Watch">{content}</Screen>;
+  return (
+    <Screen
+      header={
+        <>
+          <Text variant="title" accessibilityRole="header">
+            Watch
+          </Text>
+          <SearchButton onPress={() => navigation.navigate('Search')} />
+        </>
+      }
+    >
+      {content}
+    </Screen>
+  );
 }

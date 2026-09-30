@@ -8,7 +8,12 @@ import type { Movie, MovieDetail, Paged } from './types';
 const UPCOMING_REGION = 'US';
 
 function toMovie(movie: TmdbMovie): Movie {
-  return { id: movie.id, title: movie.title, backdropPath: movie.backdrop_path };
+  return {
+    id: movie.id,
+    title: movie.title,
+    backdropPath: movie.backdrop_path,
+    genreIds: movie.genre_ids,
+  };
 }
 
 export async function fetchUpcomingMovies(page: number, signal: AbortSignal): Promise<Paged<Movie>> {
@@ -19,9 +24,17 @@ export async function fetchUpcomingMovies(page: number, signal: AbortSignal): Pr
   return { items: body.results.map(toMovie), totalPages: body.total_pages };
 }
 
+/** The first page of the movies that match a search term. */
+export async function searchMovies(term: string, signal: AbortSignal): Promise<Paged<Movie>> {
+  const body = await tmdbGet<TmdbPage<TmdbMovie>>('/search/movie', { params: { query: term }, signal });
+  return { items: body.results.map(toMovie), totalPages: body.total_pages };
+}
+
 function toMovieDetail(movie: TmdbMovieDetail): MovieDetail {
   return {
-    ...toMovie(movie),
+    id: movie.id,
+    title: movie.title,
+    backdropPath: movie.backdrop_path,
     // TMDb sends an empty string for a date it doesn't have
     releaseDate: movie.release_date || null,
     genres: movie.genres.map(({ id, name }) => ({ id, name })),

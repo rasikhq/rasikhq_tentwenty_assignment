@@ -2,6 +2,7 @@ const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p';
 
 // Each place an image appears (a slot) asks TMDb for a size that stays sharp there, never `original`
 const sizes = {
+  thumbnail: 'w300',
   card: 'w780',
   hero: 'w1280',
   strip: 'w500',
