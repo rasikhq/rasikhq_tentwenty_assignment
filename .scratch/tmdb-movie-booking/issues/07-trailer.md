@@ -14,3 +14,9 @@
 - [ ] Playback sits behind our own trailer player component, built as ticket 06 recommends: it takes a video key and reports ended and error events.
 - [ ] Unit tests for the trailer rule.
 - [ ] Behaviour tests with a fake trailer player: Watch Trailer is hidden without a trailer; the ended event returns to the detail; an error shows Retry, Open in YouTube and Back.
+
+## Comments
+
+**2026-09-30, context from ticket 06**
+
+The trailer prototype's findings and recommended player interface are in ticket 06's Comments. Its code, including a working player to start from (`src/prototype/OwnTrailerPlayer.tsx`), is on the local `prototype/trailer` branch at commit `9045c6b`, which is not merged.
