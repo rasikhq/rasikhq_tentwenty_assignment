@@ -4,7 +4,7 @@
 
 **Blocked by:** 07 (Trailer), 09 (Search results screen), 11 (Seat map zoom). If ticket 12 or a stretch ticket lands afterwards, rebuild the APK and refresh the README.
 
-**Status:** ready-for-human
+**Status:** resolved
 
 - [x] The README covers:
   - what the app does and how to set it up (Node, install, `.env` with `EXPO_PUBLIC_TMDB_TOKEN`, running on iOS and Android);
@@ -15,10 +15,10 @@
   - trade-offs, and what breaks first at 10× the data;
   - pointers to CLAUDE.md, the planning notes, the ADRs and the steering log.
 - [x] A release APK is built locally from the generated Android project, signed with the debug keystore, installed and smoke-tested on the emulator. No keystore is committed.
-- [ ] The APK is attached to a GitHub release and linked from the demo folder (or committed there if small enough).
+- [x] The APK is attached to a GitHub release and linked from the demo folder (or committed there if small enough).
 - [x] The demo folder holds the screen recording, recorded by the developer.
 - [x] If time allows, an iOS simulator build is zipped into the demo folder.
-- [ ] `npm run check` and CI are green on the release commit.
+- [x] `npm run check` and CI are green on the release commit.
 
 ## Decisions made while building
 
@@ -40,8 +40,13 @@
 - The development builds on the emulator and on both simulators are replaced by the release builds. `npm run android` and `npm run ios` install the development builds again.
 - The screen recording is `demo/demo.mp4`, recorded by the user with OBS: 3 minutes 13 seconds, 18.6 MB, H.264 at 1800 x 1168 and 60 frames a second, with a silent audio track (the devices were muted). It shows the release builds side by side, with no development-tools bubble on either: the APK on the Pixel 9 Pro emulator in portrait, and the iOS build on the iPhone 16 simulator (iOS 18.5) in landscape. Seen in its frames: Movie list, Movie detail, the trailer playing on both, the seat map with a selection, its chips and the summary, the genre grid (four columns on iOS), a genre's Results, and Top Results for "toy story". So the seat map and Search are now seen on iOS 18.5, and in landscape. It is committed: the demos live in `demo/`, and only the two builds go on the release. Both READMEs point to it.
 
-## Left for the user
+## Published (2026-09-30)
 
-- Review the README and the demo folder before anything is public. Nothing is pushed: the repository has no remote.
-- Create the public repository (`<name>_tentwenty_assignment`), push `main` and `prototype/trailer`, and create the release `v1.0.0` with `demo/tmdb-movies-1.0.0.apk` and `demo/tmdb-movies-1.0.0-ios-simulator.zip`. Then check the link in `demo/README.md` and the CI run on the release commit.
-- The builds hold the TMDb token. Publishing them publishes the token, as the spec accepts for a read-only token.
+The user reviewed the README, the demo folder and the recording, named the repository and said to go.
+
+- Before the push, every commit on both branches was searched: the token from `.env` is in none of them, the only env file ever committed is `.env.example`, and no keystore, APK or zip is in the history.
+- The repository is public at https://github.com/rasikhq/rasikhq_tentwenty_assignment, with `main` and `prototype/trailer` pushed.
+- The release `v1.0.0` is on the commit `e07fa2a` and holds `tmdb-movies-1.0.0.apk` and `tmdb-movies-1.0.0-ios-simulator.zip`. GitHub's SHA-256 of each matches the local file. The ticket asked for the iOS build in the demo folder, and the user moved it to the release (see the steering log).
+- CI is green on the release commit: the Check workflow passed for `main`, for the tag `v1.0.0` and for `prototype/trailer`. These were the workflow's first runs on GitHub.
+- The release link in `demo/README.md` was checked on GitHub's pages for the demo folder and for the file. It is now the full URL, so it also works outside GitHub, and the README's Demo section links to the release too.
+- Still the user's: the TMDb token inside the builds is revoked a few days after the release, as `demo/README.md` says, and the short decision note is written by the user.

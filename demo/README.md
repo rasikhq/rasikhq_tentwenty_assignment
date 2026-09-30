@@ -10,7 +10,7 @@ Release builds of version 1.0.0, built on 2026-09-30 from the source at commit `
 
 > **Important Note**: The TMDb token bundled in the release builds will stop working roughly 3-5 days after the release date, for security.
 
-Builds are available in the GitHub release [v1.0.0](../../../releases/tag/v1.0.0).
+Builds are available in the GitHub release [v1.0.0](https://github.com/rasikhq/rasikhq_tentwenty_assignment/releases/tag/v1.0.0).
 
 ## Android APK
 

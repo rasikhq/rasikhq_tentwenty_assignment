@@ -18,7 +18,7 @@ Every screen has a loading skeleton, an empty state, an error state with Retry, 
 
 [demo/demo.mp4](demo/demo.mp4) is the screen recording (about 3 minutes, no sound): the Android build in portrait beside the iOS build in landscape.
 
-The installable builds are attached to the GitHub release `v1.0.0`, and [demo/README.md](demo/README.md) links to it and says how to install them and what was checked with them:
+The installable builds are attached to the GitHub release [v1.0.0](https://github.com/rasikhq/rasikhq_tentwenty_assignment/releases/tag/v1.0.0), and [demo/README.md](demo/README.md) links to it and says how to install them and what was checked with them:
 
 - Android: `tmdb-movies-1.0.0.apk`, a release APK (85 MB).
 - iOS simulator: `tmdb-movies-1.0.0-ios-simulator.zip` (20 MB), a Release build of the app for the simulator.
