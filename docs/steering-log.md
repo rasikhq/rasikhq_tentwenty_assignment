@@ -41,3 +41,13 @@ Agent recommended splitting the seat map in landscape (hall on the left; legend,
 ### Icons
 
 Agent drew the search icon as its own component (`Magnifier`) but left other icons inline in the components that use them, such as the "X" in the search field, steered to turning every icon into a re-usable component under `components/icons` instead because: the Magnifier was correctly made a component, since we avoided yet another dependency for icons just because we need a couple or more (noted as such: in a real app with a lot of icons, a proper icon set or library would be used). However, some "icons" were still inline and should be correctly turned into re-usable components, one example being the "X" in search. Putting these under `components/icons` is a small improvement, a split from the usual components.
+
+## 2026-09-30 — Tickets 10 and 11 (seat map)
+
+### Review of the seat map as one feature
+
+Agent asked to run the code review after ticket 11 alone, steered to reviewing tickets 10 and 11 together instead because: I skipped 10's review to combine it with 11 as a full feature.
+
+### Toast (challenged, kept)
+
+Agent built its own toast component for the 8-seat refusal. I challenged it: inventing a toast is overengineering for this demo, however if invoking a native toast requires a dependency, it's acceptable. The agent checked: Android has a native toast in React Native core (`ToastAndroid`), but iOS has no system toast, so a native one on iOS needs a library that draws its own view, and the two candidates (`burnt`, `react-native-simple-toast`) last released about 18 and 20 months ago. I kept the agent's own toast.

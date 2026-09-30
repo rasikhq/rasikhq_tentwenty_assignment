@@ -49,3 +49,10 @@
 - Known:
   - In phone landscape only about three rows of the hall show at once, because the hall fits the width as the spec says. Fitting the height too would show the whole hall with much smaller seats.
   - Light grey unavailable seats are faint on the off-white page. The spec names that colour.
+
+## Comments
+
+**2026-09-30, the toast, after the review of tickets 10 and 11**
+
+- The user challenged the app's own `Toast` as overengineering for a demo, unless a native toast needs a dependency. It does on iOS: Android has `ToastAndroid` in React Native core, but iOS has no system toast, so a library would draw its own view there. `burnt` (0.13.0, March 2025) and `react-native-simple-toast` (3.3.2, January 2025) were the candidates, each a native module needing a rebuild and a Jest mock. The user kept the app's own `Toast`: 50 lines, both platforms, no dependency, and the test asserts on the text the user sees.
+- The rest of the review's outcome is in ticket 11's notes.
