@@ -1,5 +1,6 @@
 import { screen, userEvent, waitFor } from '@testing-library/react-native';
 
+import { SEARCH_DEBOUNCE_MS } from '../hooks/useMovieSearch';
 import { controlDate, passDays } from '../test/clock';
 import { letDiskSettle } from '../test/disk';
 import { goOffline, goOnline } from '../test/network';
@@ -37,11 +38,11 @@ async function openSearchAndType(text: string) {
 }
 
 /**
- * Waits longer than Search pauses after the last keystroke, so a request it was going to send has gone
- * out and its answer has reached the screen. For a test that expects no request, or no change on screen.
+ * Waits longer than Search pauses after the last keystroke, so any request the app was going to send has
+ * gone out and its answer has reached the screen. For a test that expects no request, or no change on screen.
  */
 function letSearchSettle() {
-  return new Promise((resolve) => setTimeout(resolve, 400));
+  return new Promise((resolve) => setTimeout(resolve, SEARCH_DEBOUNCE_MS + 100));
 }
 
 test("Movie list's search button opens Search, which asks for a title before any typing", async () => {
@@ -51,7 +52,7 @@ test("Movie list's search button opens Search, which asks for a title before any
   expect(screen.getByText('Search for a movie by its title.')).toBeOnTheScreen();
 });
 
-test("with the search field empty, its button closes Search and returns to Movie list", async () => {
+test('with the search field empty, its button closes Search and returns to Movie list', async () => {
   const user = await openSearchFromMovieList();
 
   await user.press(screen.getByRole('button', { name: 'Close search' }));
@@ -191,7 +192,7 @@ test('offline, a term not searched before says search needs a connection', async
   expect(screen.queryByLabelText('Searching')).not.toBeOnTheScreen();
 });
 
-test('offline, a term searched earlier in the session still shows its results', async () => {
+test('offline, a term searched earlier in the session still shows its results, under an offline banner', async () => {
   serveSearch({ dune: [tmdbMovie({ title: 'Dune: Part Two' })] });
   const user = await openSearchAndType('dune');
   await screen.findByRole('button', { name: 'Dune: Part Two' });
@@ -202,7 +203,13 @@ test('offline, a term searched earlier in the session still shows its results', 
   await user.type(screen.getByPlaceholderText('Search movies'), '{Backspace}');
 
   expect(screen.getByRole('button', { name: 'Dune: Part Two' })).toBeOnTheScreen();
+  expect(screen.getByText("You're offline. Showing results from earlier.")).toBeOnTheScreen();
   expect(screen.queryByText("You're offline")).not.toBeOnTheScreen();
+
+  await goOnline();
+
+  expect(screen.queryByText(/You're offline/)).not.toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: 'Dune: Part Two' })).toBeOnTheScreen();
 });
 
 test('when the connection comes back, the search that waited for it shows its results', async () => {
@@ -293,4 +300,17 @@ test('tapping a Top Results row opens Movie detail with the title from the row b
   answer.open();
 
   expect(await screen.findByText('Paul Atreides unites with the Fremen.')).toBeOnTheScreen();
+});
+
+test('returning to a term whose search was cancelled waits out the pause again before asking TMDb', async () => {
+  const search = serveSearch({}, { hold: { dune: gate().opened } });
+  const user = await openSearchAndType('dune');
+  await waitFor(() => expect(search.queries).toEqual(['dune']));
+
+  await user.type(screen.getByPlaceholderText('Search movies'), 's{Backspace}');
+  // Well inside the pause: a request that skipped it would have arrived by now
+  await new Promise((resolve) => setTimeout(resolve, SEARCH_DEBOUNCE_MS / 3));
+
+  expect(search.queries).toEqual(['dune']);
+  await waitFor(() => expect(search.queries).toEqual(['dune', 'dune']));
 });

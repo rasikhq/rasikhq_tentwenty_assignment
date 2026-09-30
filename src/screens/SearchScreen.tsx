@@ -9,6 +9,7 @@ import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { MovieRow } from '../components/MovieRow';
 import { MovieRowsSkeleton } from '../components/MovieRowsSkeleton';
+import { OfflineBanner } from '../components/OfflineBanner';
 import { OfflineState } from '../components/OfflineState';
 import { Screen } from '../components/Screen';
 import { SearchField } from '../components/SearchField';
@@ -17,6 +18,7 @@ import { useGenres } from '../hooks/useGenres';
 import { useIsOnline } from '../hooks/useIsOnline';
 import { useMovieSearch } from '../hooks/useMovieSearch';
 import { errorMessage } from '../lib/errorMessage';
+import { firstGenreName } from '../lib/genres';
 import { useColumnCount } from '../lib/layout';
 import { normalizeSearchTerm } from '../lib/searchTerm';
 import type { RootStackParamList } from '../navigation/RootNavigator';
@@ -37,7 +39,7 @@ export function SearchScreen({ navigation }: NativeStackScreenProps<RootStackPar
       <View className="p-2.5">
         <MovieRow
           movie={item}
-          genre={genres?.find((genre) => genre.id === item.genreIds[0])?.name}
+          genre={firstGenreName(item, genres)}
           onPress={() => {
             // The field keeps its focus, and on Android the keyboard would stay up over Movie Detail
             Keyboard.dismiss();
@@ -57,27 +59,31 @@ export function SearchScreen({ navigation }: NativeStackScreenProps<RootStackPar
     content = <EmptyState title={`No movies match '${text.trim()}'`} message="Try different words." />;
   } else if (results) {
     content = (
-      <FlashList
-        // As on Movie List, a new column count starts a new list. So does a new term, which opens at its
-        // first result and not where the last term's list was scrolled to
-        key={`${columns} ${term}`}
-        accessibilityLabel="Top Results"
-        // The list scrolls under the home indicator, so its end pads by the bottom inset
-        contentContainerStyle={{ padding: 10, paddingBottom: 10 + insets.bottom }}
-        // A tap on a row opens its movie even while the keyboard is up, and scrolling puts the keyboard away
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        data={results.items}
-        renderItem={renderMovie}
-        numColumns={columns}
-        ListHeaderComponent={
-          <View className="mx-2.5 mb-2.5 border-b border-light-grey py-2.5">
-            <Text variant="sectionTitle" accessibilityRole="header">
-              Top Results
-            </Text>
-          </View>
-        }
-      />
+      <>
+        {/* These results are from earlier in the session: offline, no term can be searched afresh */}
+        {!isOnline && <OfflineBanner message="You're offline. Showing results from earlier." />}
+        <FlashList
+          // As on Movie List, a new column count starts a new list. So does a new term, which opens at its
+          // first result and not where the last term's list was scrolled to
+          key={`${columns} ${term}`}
+          accessibilityLabel="Top Results"
+          // The list scrolls under the home indicator, so its end pads by the bottom inset
+          contentContainerStyle={{ padding: 10, paddingBottom: 10 + insets.bottom }}
+          // A tap on a row opens its movie even while the keyboard is up, and scrolling puts the keyboard away
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          data={results.items}
+          renderItem={renderMovie}
+          numColumns={columns}
+          ListHeaderComponent={
+            <View className="mx-2.5 mb-2.5 border-b border-light-grey py-2.5">
+              <Text variant="sectionTitle" accessibilityRole="header">
+                Top Results
+              </Text>
+            </View>
+          }
+        />
+      </>
     );
   } else if (!isOnline) {
     // Offline, the request would only wait for a connection, so this shows on the first keystroke, with

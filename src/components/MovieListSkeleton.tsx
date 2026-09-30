@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 
-import { useColumnCount } from '../lib/layout';
 import { Skeleton } from './Skeleton';
+import { SkeletonGrid } from './SkeletonGrid';
 
 type MovieListSkeletonProps = {
   /** What a screen reader says for the placeholders. */
@@ -12,20 +12,11 @@ type MovieListSkeletonProps = {
 
 /** Stands in for Movie List cards that are loading, in as many columns as the list has. */
 export function MovieListSkeleton({ label, rows }: MovieListSkeletonProps) {
-  const columns = useColumnCount();
-
   return (
-    <View
-      accessible
-      accessibilityLabel={label}
-      accessibilityState={{ busy: true }}
-      className="flex-row flex-wrap overflow-hidden"
-    >
-      {Array.from({ length: rows * columns }, (_, index) => (
-        <View key={index} className={columns === 1 ? 'w-full p-2' : 'w-1/2 p-2'}>
-          <Skeleton className="aspect-video rounded-2xl" />
-        </View>
-      ))}
-    </View>
+    <SkeletonGrid label={label} rows={rows}>
+      <View className="p-2">
+        <Skeleton className="aspect-video rounded-2xl" />
+      </View>
+    </SkeletonGrid>
   );
 }

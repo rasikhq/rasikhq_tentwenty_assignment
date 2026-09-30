@@ -1,4 +1,5 @@
 import { tmdbGet } from './client';
+import { toGenre } from './genres';
 import { pickTrailer } from './trailer';
 import type { TmdbMovie, TmdbMovieDetail, TmdbPage } from './tmdbTypes';
 import type { Movie, MovieDetail, Paged } from './types';
@@ -37,7 +38,7 @@ function toMovieDetail(movie: TmdbMovieDetail): MovieDetail {
     backdropPath: movie.backdrop_path,
     // TMDb sends an empty string for a date it doesn't have
     releaseDate: movie.release_date || null,
-    genres: movie.genres.map(({ id, name }) => ({ id, name })),
+    genres: movie.genres.map(toGenre),
     overview: movie.overview,
     backdropPaths: movie.images.backdrops.map((image) => image.file_path),
     trailer: pickTrailer(movie.videos.results),
