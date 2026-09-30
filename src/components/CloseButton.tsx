@@ -1,17 +1,11 @@
 import { Pressable, View } from 'react-native';
 
-type CloseButtonProps = {
-  /** What it closes, for a screen reader: "Close trailer". */
-  label: string;
-  onPress: () => void;
-};
-
-/** A close button for a dark screen. */
-export function CloseButton({ label, onPress }: CloseButtonProps) {
+/** A round close button for a dark screen. */
+export function CloseButton({ onPress }: { onPress: () => void }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel="Close"
       onPress={onPress}
       className="h-12 w-12 items-center justify-center rounded-full bg-white/10 active:opacity-80"
     >

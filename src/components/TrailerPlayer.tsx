@@ -1,6 +1,8 @@
 import { useMemo, useRef } from 'react';
-import { Linking, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
+
+import { openLink } from '../lib/openLink';
 
 export type TrailerPlayerProps = {
   /** The YouTube video key from the movie's trailer. */
@@ -27,7 +29,7 @@ const READY_TIMEOUT_MS = 12_000;
  */
 function playerPage(videoKey: string) {
   // The key comes from TMDb, and the page is a script: a "<" can't be allowed to close the script tag
-  const videoId = JSON.stringify(videoKey).replace(/</g, '\\u003c');
+  const videoKeyLiteral = JSON.stringify(videoKey).replace(/</g, '\\u003c');
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -56,7 +58,7 @@ function onYouTubeIframeAPIReady() {
   new YT.Player('player', {
     width: '100%',
     height: '100%',
-    videoId: ${videoId},
+    videoId: ${videoKeyLiteral},
     // fs: 0 hides YouTube's own fullscreen button: the trailer screen is already fullscreen
     playerVars: { autoplay: 1, playsinline: 1, rel: 0, fs: 0 },
     events: {
@@ -113,7 +115,7 @@ export function TrailerPlayer({ videoKey, onEnded, onError }: TrailerPlayerProps
         const isOurPage =
           request.url === 'about:blank' || request.url === APP_URL || request.url.startsWith(`${APP_URL}/`);
         if (isFrame || isOurPage) return true;
-        if (request.url.startsWith('https://')) void Linking.openURL(request.url);
+        if (request.url.startsWith('https://')) openLink(request.url);
         return false;
       }}
     />
