@@ -5,6 +5,7 @@ import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackButton } from '../components/BackButton';
+import { Button } from '../components/Button';
 import { Chip } from '../components/Chip';
 import { ErrorState } from '../components/ErrorState';
 import { ImageStrip } from '../components/ImageStrip';
@@ -44,10 +45,21 @@ export function MovieDetailScreen({
   const isLoading = !detail && !error && !isWaitingForConnection;
 
   const release = detail && releaseLine(detail.releaseDate);
+  // A detail saved before the app read trailers has none
+  const trailer = detail?.trailer;
   const hero = (
     <MovieHero title={shown.title} backdropPath={shown.backdropPath} fill={isWide}>
       {release && <Text variant="heroSubtitle">{release}</Text>}
       {isLoading && <Skeleton className="h-5 w-[160px] rounded" />}
+      {trailer && (
+        <View className="flex-row pt-2">
+          <Button
+            variant="outline"
+            label="Watch Trailer"
+            onPress={() => navigation.navigate('Trailer', { trailer })}
+          />
+        </View>
+      )}
     </MovieHero>
   );
 

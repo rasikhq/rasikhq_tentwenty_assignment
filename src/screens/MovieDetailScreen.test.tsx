@@ -4,7 +4,7 @@ import { controlDate, passDays, passHours } from '../test/clock';
 import { letDiskSettle } from '../test/disk';
 import { goOffline, goOnline } from '../test/network';
 import { renderApp } from '../test/renderApp';
-import { gate, serveMovieDetail, serveUpcoming, tmdbMovie, tmdbMovieDetail } from '../test/tmdb';
+import { gate, serveMovieDetail, serveUpcoming, tmdbMovie, tmdbMovieDetail, tmdbVideo } from '../test/tmdb';
 import { rotateToLandscape } from '../test/window';
 
 /** Opens the app on Movie list, which lists this movie, and taps it. */
@@ -97,6 +97,28 @@ test('a movie without images has no image strip on Movie detail', async () => {
 
   expect(await screen.findByText('No pictures yet.')).toBeOnTheScreen();
   expect(screen.queryByLabelText('Movie images')).not.toBeOnTheScreen();
+});
+
+test('Movie detail offers Watch Trailer for a movie with a trailer', async () => {
+  const detail = tmdbMovieDetail({ videos: { results: [tmdbVideo({ type: 'Trailer' })] } });
+  serveMovieDetail(detail);
+
+  await openMovie(detail);
+
+  expect(await screen.findByRole('button', { name: 'Watch Trailer' })).toBeOnTheScreen();
+});
+
+test('Watch Trailer is hidden for a movie with no trailer', async () => {
+  const detail = tmdbMovieDetail({
+    overview: 'Only clips so far.',
+    videos: { results: [tmdbVideo({ type: 'Clip' }), tmdbVideo({ type: 'Trailer', official: false })] },
+  });
+  serveMovieDetail(detail);
+
+  await openMovie(detail);
+
+  expect(await screen.findByText('Only clips so far.')).toBeOnTheScreen();
+  expect(screen.queryByRole('button', { name: 'Watch Trailer' })).not.toBeOnTheScreen();
 });
 
 test('Movie detail shows placeholder sections while the details load', async () => {

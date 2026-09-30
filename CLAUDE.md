@@ -12,7 +12,7 @@ Tests prove behaviour the way a user meets it. The full approach is under "Testi
 - Fake only at the seams the spec names, so everything between the screen and the network runs for real:
   - HTTP: MSW answers TMDb. Each test adds the endpoints it uses, through the helpers in `src/test/tmdb.ts` (fixture builders such as `tmdbMovie()`, and one handler helper per endpoint, built on `server.use()` from `src/test/server.ts`); a request without a handler fails the test. A new endpoint adds its helper there.
   - Connectivity and disk: the official NetInfo and AsyncStorage Jest mocks.
-  - Trailer player: a fake of our own trailer player component.
+  - Trailer player: a fake of our own trailer player component (`src/test/trailerPlayer.tsx`), in place for every test. It shows the video key it plays; `endTrailer()` and `failTrailer()` fire its events.
   - Clock: Jest's system time.
 - A new native module gets its library's official Jest mock in `src/test/setup.ts`.
 - Jest has no layout pass, so a FlashList renders in a fixed 400 x 900 window with 100-high rows (`src/test/setup.ts`). A page of `fullPage()` (20 movies) overflows it: `user.scrollTo(list, { y: 1100 })` reaches its end, and `pullToRefresh(list)` from `src/test/pullToRefresh.ts` pulls it down. Tests start in a phone-sized portrait window, so a screen is narrow unless a test says otherwise.

@@ -26,6 +26,10 @@ jest.mock('@react-native-community/netinfo', () =>
   jest.requireActual<object>('@react-native-community/netinfo/jest/netinfo-mock.js'),
 );
 
+// The trailer player is a WebView, and react-native-webview has no Jest mock: importing it throws. Every
+// test gets a fake of our own component instead, so the WebView is never imported (ADR-0005).
+jest.mock('../components/TrailerPlayer', () => jest.requireActual<object>('./trailerPlayer'));
+
 // Jest has no layout pass, so FlashList measures nothing and renders no rows. This fixes the sizes it
 // measures, as FlashList's own tests do. Its shipped jestSetup.js can't be used: in 2.0.2 it swaps
 // FlashList for a `RecyclerView` export that the package no longer has.

@@ -10,6 +10,8 @@ module.exports = {
     colors: {
       transparent: 'transparent',
       white: '#FFFFFF',
+      // Behind a video, as its own letterbox bars are
+      black: '#000000',
       // The Figma guide palette
       navy: '#2E2739',
       'off-white': '#F6F6FA',

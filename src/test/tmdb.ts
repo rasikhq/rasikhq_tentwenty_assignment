@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
 
-import type { TmdbMovie, TmdbMovieDetail, TmdbPage } from '../api/tmdbTypes';
+import type { TmdbMovie, TmdbMovieDetail, TmdbPage, TmdbVideo } from '../api/tmdbTypes';
 import { server } from './server';
 
 /** The token the app runs with in tests. The fake TMDb only answers requests that carry it. */
@@ -106,6 +106,11 @@ export function stallUpcoming() {
   return request;
 }
 
+/** A video as TMDb lists it for a movie: an official YouTube trailer, unless a test says otherwise. */
+export function tmdbVideo(overrides: Partial<TmdbVideo> = {}): TmdbVideo {
+  return { key: 'video-key', site: 'YouTube', type: 'Trailer', official: true, ...overrides };
+}
+
 /** A movie's full detail as TMDb sends it from /movie/{id}. A test states only the fields it cares about. */
 export function tmdbMovieDetail(overrides: Partial<TmdbMovieDetail> = {}): TmdbMovieDetail {
   return {
@@ -113,6 +118,7 @@ export function tmdbMovieDetail(overrides: Partial<TmdbMovieDetail> = {}): TmdbM
     release_date: '2021-12-22',
     overview: 'An overview of the movie.',
     genres: [],
+    videos: { results: [] },
     images: { backdrops: [] },
     ...overrides,
   };

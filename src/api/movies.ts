@@ -1,4 +1,5 @@
 import { tmdbGet } from './client';
+import { pickTrailer } from './trailer';
 import type { TmdbMovie, TmdbMovieDetail, TmdbPage } from './tmdbTypes';
 import type { Movie, MovieDetail, Paged } from './types';
 
@@ -26,6 +27,7 @@ function toMovieDetail(movie: TmdbMovieDetail): MovieDetail {
     genres: movie.genres.map(({ id, name }) => ({ id, name })),
     overview: movie.overview,
     backdropPaths: movie.images.backdrops.map((image) => image.file_path),
+    trailer: pickTrailer(movie.videos.results),
   };
 }
 

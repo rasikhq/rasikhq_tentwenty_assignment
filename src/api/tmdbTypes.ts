@@ -14,15 +14,25 @@ export type TmdbGenre = {
   name: string;
 };
 
-/**
- * A movie from /movie/{id} with images appended. TMDb sends more fields than the app reads: the
- * appended videos are left out until the app reads them, for the trailer.
- */
+/** A video TMDb lists for a movie. TMDb sends more fields than the app reads. */
+export type TmdbVideo = {
+  /** The video's id on its site. For YouTube, the `v` of the watch URL. */
+  key: string;
+  /** "YouTube" or "Vimeo". */
+  site: string;
+  /** "Trailer", "Teaser", "Clip", "Featurette", "Behind the Scenes" or "Bloopers". */
+  type: string;
+  /** Whether the video comes from the movie's own studio or distributor. */
+  official: boolean;
+};
+
+/** A movie from /movie/{id} with videos and images appended. TMDb sends more fields than the app reads. */
 export type TmdbMovieDetail = TmdbMovie & {
   /** "2021-12-22", or an empty string when TMDb has no release date. */
   release_date: string;
   overview: string;
   genres: TmdbGenre[];
+  videos: { results: TmdbVideo[] };
   images: { backdrops: { file_path: string }[] };
 };
 

@@ -1,13 +1,15 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import type { Movie } from '../api/types';
+import type { Movie, Trailer } from '../api/types';
 import { MovieDetailScreen } from '../screens/MovieDetailScreen';
 import { MovieListScreen } from '../screens/MovieListScreen';
+import { TrailerScreen } from '../screens/TrailerScreen';
 
 export type RootStackParamList = {
   MovieList: undefined;
   /** The movie as the screen that opened it knows it: its image and title show until the detail arrives. */
   MovieDetail: { movie: Movie };
+  Trailer: { trailer: Trailer };
 };
 
 // Types useNavigation() and <Link> across the app without passing the param list around
@@ -26,6 +28,8 @@ export function RootNavigator() {
     <Stack.Navigator initialRouteName="MovieList" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MovieList" component={MovieListScreen} />
       <Stack.Screen name="MovieDetail" component={MovieDetailScreen} />
+      {/* Covers the whole screen and, like every screen, turns with the device */}
+      <Stack.Screen name="Trailer" component={TrailerScreen} options={{ presentation: 'fullScreenModal' }} />
     </Stack.Navigator>
   );
 }

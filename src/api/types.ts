@@ -15,6 +15,12 @@ export type Genre = {
   name: string;
 };
 
+/** A movie's trailer: a YouTube video. */
+export type Trailer = {
+  /** The video's key on YouTube, the `v` of its watch URL. */
+  videoKey: string;
+};
+
 /** A movie as its detail shows it: everything a list shows, and the rest. */
 export type MovieDetail = Movie & {
   /** "2021-12-22", or null when TMDb has no release date. */
@@ -24,6 +30,8 @@ export type MovieDetail = Movie & {
   overview: string;
   /** TMDb's file paths for the movie's backdrop images, for the image strip. */
   backdropPaths: string[];
+  /** Null when the movie has no trailer. */
+  trailer: Trailer | null;
 };
 
 /** One page of a paged TMDb list. */
