@@ -23,6 +23,10 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# The release builds are attached to the GitHub release, never committed
+/demo/*.apk
+/demo/*.zip
+
 # Metro
 .metro-health-check*
 

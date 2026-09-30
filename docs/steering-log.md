@@ -61,3 +61,9 @@ Agent drew a seat as one block, rounder at the back (it couldn't read the Figma 
 ### Upcoming movies saved without their genres
 
 The code review flagged the agent's guard for an upcoming movie saved before list movies carried their genres (a cast against the app type, with a test that faked TMDb sending no genres). Agent recommended bumping the app version to 1.0.1, so the cache buster discards such a saved list, steered to removing the guard with no version bump instead. Picked from the options the agent offered, with no comment of my own to transcribe. The option read: no build was ever released, and both dev devices refreshed their list since ticket 08.
+
+## 2026-09-30 — Ticket 13 (release)
+
+### Builds on the GitHub release only
+
+Agent committed the iOS simulator build as a zip in the demo folder, as the ticket said, and kept only the APK for the GitHub release (at 85 MB it is too large to commit), steered to committing neither instead: "we wont commit apk or zips, everything will be in release on github only". No reason of my own to transcribe.

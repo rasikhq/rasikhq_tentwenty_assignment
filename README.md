@@ -1,16 +1,33 @@
 # TMDb Movies
 
-A React Native app (Expo SDK 55, TypeScript, New Architecture) that lists upcoming movies from TMDb, shows their details and trailers, finds movies by search, and takes the user as far as picking seats. It supports iOS 15.1+ and Android (target API 36), in portrait and landscape.
+A React Native app that lists upcoming movies from TMDb, shows their details and trailers, finds movies by search or by genre, and takes the user as far as picking seats for a showtime. Booking stops at seat selection: there is no payment.
 
-This README is a stub for now. The full version comes with the release.
+Built with Expo SDK 55 (React Native 0.83), TypeScript in strict mode and the New Architecture, for iOS 15.1+ and Android (min API 24, target API 36), in portrait and landscape.
 
-## Requirements
+## What it does
+
+- **Movie list**: upcoming movies as large image cards, with more pages on scroll and pull-to-refresh. The last list the app loaded shows at once on reopening, and offline under a banner.
+- **Movie detail**: the image and title show the moment a card is tapped, then the release line, genre chips, overview and a strip of images. Watch Trailer shows only when a trailer exists, and Get Tickets only for a bookable movie (released within the last 60 days, or not yet).
+- **Trailer**: fullscreen, plays by itself, and returns to the detail when it ends. A trailer that can't play shows Retry, Open in YouTube and Back.
+- **Search**: a genre grid before typing, live Top Results while typing, and a Results screen on submit. What is on screen always belongs to the text in the field, never to an earlier search.
+- **Seat map**: one hall for a fixed mock showtime, with Regular and VIP seats, unavailable seats, a selection of up to 8 seats, a running total and zoom buttons. Proceed to pay shows a summary that says payment isn't part of this demo.
+
+Every screen has a loading skeleton, an empty state, an error state with Retry, and an offline state.
+
+## Demo
+
+The installable builds are attached to the GitHub release `v1.0.0`, and [demo/README.md](demo/README.md) links to it and says how to install them and what was checked with them:
+
+- Android: `tmdb-movies-1.0.0.apk`, a release APK (85 MB).
+- iOS simulator: `tmdb-movies-1.0.0-ios-simulator.zip` (20 MB), a Release build of the app for the simulator.
+
+## Setup
+
+Requirements:
 
 - Node 22 (22.13 or newer) or Node 24 and later, with npm
 - iOS: Xcode with an iOS simulator
 - Android: Android Studio with SDK 36, an emulator, and JDK 17
-
-## Setup
 
 ```bash
 npm install
@@ -23,7 +40,11 @@ Then paste your TMDb API Read Access Token (the long v4 token from https://www.t
 EXPO_PUBLIC_TMDB_TOKEN=your-token
 ```
 
-The token is inlined into the JavaScript bundle when Metro bundles the app. After changing `.env`, restart Metro with `npm start -- --clear`.
+### The token
+
+The token is read from the `EXPO_PUBLIC_TMDB_TOKEN` environment variable when Metro bundles the app, and it is inlined into the JavaScript bundle. `.env` is gitignored, so the token never enters the repository. It does ship inside every build, the demo builds included, and anyone who unpacks a build can read it. That is acceptable here because it is a read-only token for public movie data. A production app would call TMDb through its own backend, which holds the token.
+
+After changing `.env`, restart Metro with `npm start -- --clear`.
 
 ## Run
 
@@ -41,3 +62,119 @@ After the first build, `npm start` is enough: it starts Metro, and pressing `i` 
 ```bash
 npm run check     # typecheck, lint and tests, the same command CI runs
 ```
+
+`npx jest <path>` runs one test file. The tests render the whole app and drive it as a user does, with fakes only at the edges: MSW answers TMDb, and the official Jest mocks stand in for connectivity and storage. `CLAUDE.md` has the rules, and the spec's "Testing Decisions" has the reasoning.
+
+## Release builds
+
+The APK is a release build from the generated Android project, signed with the debug keystore that `expo prebuild` generates. It installs on any device, and it can't go to a store. No keystore is committed. The build needs JDK 17 and `ANDROID_HOME`, and `.env` in place, because the token is inlined when Gradle bundles the JavaScript.
+
+```bash
+npx expo prebuild --platform android
+cd android && ./gradlew assembleRelease
+# android/app/build/outputs/apk/release/app-release.apk
+```
+
+The iOS simulator build:
+
+```bash
+npx expo prebuild --platform ios
+xcodebuild -workspace ios/TMDbMovies.xcworkspace -scheme TMDbMovies -configuration Release -sdk iphonesimulator -derivedDataPath ios/DerivedData
+# ios/DerivedData/Build/Products/Release-iphonesimulator/TMDbMovies.app
+```
+
+## Libraries, and why
+
+| Library | Why |
+| --- | --- |
+| Expo SDK 55, React Native 0.83 | The newest Expo SDK that still supports iOS 15. SDK 56 and later need iOS 16.4. See [ADR-0002](docs/adr/0002-expo-sdk-55-for-ios-15.md). |
+| TanStack Query, with its AsyncStorage persister | All TMDb data is server state: caching, de-duplication, cancellation and refetch on focus and reconnect come with it, and the persister makes the cache survive a restart for offline use. There is no global store, because the rest is UI state in components. See [ADR-0003](docs/adr/0003-server-state-in-tanstack-query-persisted-offline.md). |
+| React Navigation 7 (native stack) | Six routes in one typed file. expo-router's file-based routes and deep links aren't needed. See [ADR-0004](docs/adr/0004-react-navigation-over-expo-router.md). |
+| NativeWind 4 | Tailwind classes, with the Figma's palette, spacing and Poppins in `tailwind.config.js`. A small set of primitives (`Text`, `Button`, `Screen`, `Chip` and so on) owns the class strings. The agent recommended `StyleSheet`, and I chose NativeWind (see the steering log). Reanimated and Worklets are installed because NativeWind needs them. |
+| FlashList 2 | Recycled rows, so the movie lists stay smooth however far they scroll. |
+| expo-image | Memory and disk cache, so an image seen once still shows offline. |
+| react-native-webview | Runs YouTube's official IFrame Player API inside our own trailer player component. `react-native-youtube-iframe` didn't autoplay on Android and reported nothing offline. See [ADR-0005](docs/adr/0005-own-webview-trailer-player.md). |
+| NetInfo | Tells TanStack Query and the screens whether the phone is online. |
+| expo-linear-gradient | The darkening gradient under a title on an image. |
+| Jest with jest-expo, React Native Testing Library 14, MSW 2 | Tests render the whole app and fake only the network. MSW stays on 2.x: 3.0 is ESM-only and dropped its React Native entry point. |
+| ESLint 9 with type-aware typescript-eslint | `no-floating-promises` catches an un-awaited render or event in a test, and an import rule keeps TMDb's JSON shapes inside `src/api/`. |
+
+Left out on purpose: an icon library (the five icons are small components in `src/components/icons`), a toast library (iOS has no system toast, and the two candidates last had a release about 18 and 20 months ago), and MMKV (two more native dependencies for a small, capped cache).
+
+## Layout of the code
+
+```
+src/
+  api/          the only code that knows TMDb's JSON; maps it to app types
+  screens/      one file per screen, with its behaviour tests
+  components/   primitives and screen parts; icons under components/icons
+  hooks/        query hooks and UI state (selection, zoom)
+  lib/          pure rules (bookable movie, hall layout, search term), query client, layout
+  data/         the hall definitions
+  navigation/   the root stack
+  test/         renderApp(), the fake TMDb, and the other test fakes
+```
+
+
+## Scope decisions
+
+- **The four screens of the brief came first**: Movie list, Movie detail with the trailer, Search with Results, and the seat map.
+- **Genre browse is an addition.** The brief doesn't ask for it, and the Figma's search screen shows a genre grid. I chose to build it, last among the features, with TMDb's genre and discover endpoints, so Search never opens on a blank screen. A tile's image comes from an upcoming movie the app already holds, so the grid costs no extra request.
+- **Figma extras left out**, because the brief gives them no behaviour:
+  - the bottom tab bar;
+  - the "…" menu on search rows;
+  - the date and showtime screen. Get Tickets opens the seat map for one mock showtime: the later of today and the release date, at 12:30 in Hall 1;
+  - the title logo over the detail image.
+- **Changed from the Figma**: the search field says "Search movies", not "TV shows, movies and more", because the app searches movies only.
+- **Stretch tickets not built**: the showtime picker (14), pinch-to-zoom on the seat map (15), the title logo (16) and a Maestro smoke flow (17). They are still open under `.scratch/tmdb-movie-booking/issues/`.
+- **Out of scope**: payment and real booking, accounts, a dark theme, deep links and localization. The full list is in the spec's "Out of Scope".
+- **The upcoming list asks TMDb for the US region.** Without a region, TMDb returned 1,823 movies and 39% of the first 600 were in English. The app shows English text, dollar prices and US dates.
+
+## Platforms and what was tested
+
+- **iOS floor: 15.1.** The brief asks for iOS 15+. React Native 0.83 and Expo SDK 55 set the floor at 15.1, and `app.json` pins it as the deployment target.
+- **Android**: min API 24, compile and target API 36, edge-to-edge.
+- **Actually run on**:
+  - iPhone 17 Pro simulator, iOS 26.5
+  - iPhone 16 simulator, iOS 18.5
+  - Pixel 9 Pro emulator, Android 15 (API 35)
+
+  Each feature was checked as it was built: on the emulator in portrait and landscape, and on the iOS 26.5 simulator, where landscape was seen on some screens only. Each ticket records what was and wasn't seen. The iOS 18.5 simulator ran the release build only: Movie list, Movie detail and the trailer.
+- **Not tested**: a physical device, an iOS 15, 16 or 17 runtime (didn't install them), an API 36 emulator, a tablet, and a screen reader. Seats, cards, buttons, chips and tiles carry accessibility labels and states, and the tests find them by role and label, but nobody has listened to VoiceOver or TalkBack read them.
+
+## Trade-offs
+
+- **React Native 0.83 is outside React Native's own support window.** That is the price of keeping both Expo and iOS 15. The next SDK upgrade is the point to drop iOS 15.
+- **The token ships in the bundle** (see above).
+- **No automatic retries.** A failed request shows its error state at once, and Retry is the recovery. TanStack Query's default of three retries would hold the skeleton for about 7 seconds first.
+- **Search is correct by how it is stored, not by timing.** Each answer is stored under its search term, and the screen shows only the entry for the current term. Debounce and cancellation only cut load. The cost is one cache entry per term, for the session. See [ADR-0001](docs/adr/0001-search-results-keyed-by-term.md).
+- **We own the trailer player**: about 100 lines that follow YouTube's IFrame API. On Android, a link inside the player can load in place instead of opening YouTube when the JavaScript thread is busy for more than 250 ms. The player waits 12 seconds to become ready: on a just-booted emulator the first trailer took longer and showed the error state, and Retry played it.
+- **Seats are views, not SVG or a canvas.** Each seat has its own accessibility label and re-renders alone. Zoom lays the seats out again at the new size and never scales them, so they stay sharp. It costs about 200 views.
+- **In phone landscape the hall shows about three rows at a time**, because the hall fits the window's width at the first zoom level.
+- **TMDb serves only 500 pages of any list.** A genre ends there, and "N Results Found" can be more than the movies a user can reach.
+- **A refresh loads every loaded page again**, one request per page.
+- **Jest has no layout pass**, so the tests can't tell one column from two. Column counts, rotation and the zoom's kept centre were checked on the devices.
+- **The APK is signed with the debug keystore**: Intended for review not for store submissions.
+
+## What breaks first at 10× the data
+
+1. **The saved cache.** The persister writes the whole cache as one AsyncStorage value on every change. It is capped today (3 pages of the list, the details the user opened, the genre list), and details are the part that grows. The path is one saved entry per query, on MMKV.
+2. **Long lists in memory.** An infinite list keeps every loaded page, and a refresh asks for each again. The path is a cap on kept pages (`maxPages`), and a refresh that starts again from the first page.
+3. **The seat map.** One view per seat is right for about 200 seats. A stadium-sized hall needs a Skia canvas, with hit-testing and accessibility done by hand.
+4. **Search.** Results never reach the disk, so their growth ends with the session. A very long session would need a shorter life for search entries than the 7 days the saved queries need.
+
+## How this was built
+
+I built this with Claude Code, and the repository keeps the trail:
+
+- [CLAUDE.md](CLAUDE.md): the rules the agent works under, with `docs/agents/` for the issue tracker, labels and domain docs.
+- [.scratch/tmdb-movie-booking/spec.md](.scratch/tmdb-movie-booking/spec.md): the spec from the planning session.
+- [.scratch/tmdb-movie-booking/issues/](.scratch/tmdb-movie-booking/issues): one ticket per slice, each with the decisions made while building, what the code review found, and what was and wasn't checked on a device.
+- [docs/adr/](docs/adr): the five decisions that are hard to reverse.
+- [docs/steering-log.md](docs/steering-log.md): where I overrode or corrected the agent, and why.
+- [CONTEXT.md](CONTEXT.md): the glossary the code, tests and tickets share.
+- The `prototype/trailer` branch: the throwaway prototype that compared the two trailer players (ticket 06). It is not merged.
+
+### Skills
+- [Mattpocock skills](https://github.com/mattpocock/skills): Build like a true engineer by staying in control on what the LLM/Agent builds. Spec driven, not vibe coding or slop.
+- [Caveman](https://github.com/JuliusBrussee/caveman): Token efficiency
