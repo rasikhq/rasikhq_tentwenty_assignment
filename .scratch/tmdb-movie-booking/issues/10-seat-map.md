@@ -56,3 +56,7 @@
 
 - The user challenged the app's own `Toast` as overengineering for a demo, unless a native toast needs a dependency. It does on iOS: Android has `ToastAndroid` in React Native core, but iOS has no system toast, so a library would draw its own view there. `burnt` (0.13.0, March 2025) and `react-native-simple-toast` (3.3.2, January 2025) were the candidates, each a native module needing a rebuild and a Jest mock. The user kept the app's own `Toast`: 50 lines, both platforms, no dependency, and the test asserts on the text the user sees.
 - The rest of the review's outcome is in ticket 11's notes.
+
+**2026-09-30, the seat's shape**
+
+- The user gave a screenshot of the Figma legend. `SeatSwatch` now draws the Figma's seat: a rounded back with a narrower cushion under it, two views in the tone's colour, sized as shares of the seat's size. It was one block, rounder at the back. Seen on the Pixel 9 Pro emulator at fit and at the largest zoom level, in the hall and in the legend.

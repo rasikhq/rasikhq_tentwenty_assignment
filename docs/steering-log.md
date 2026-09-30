@@ -51,3 +51,7 @@ Agent asked to run the code review after ticket 11 alone, steered to reviewing t
 ### Toast (challenged, kept)
 
 Agent built its own toast component for the 8-seat refusal. I challenged it: inventing a toast is overengineering for this demo, however if invoking a native toast requires a dependency, it's acceptable. The agent checked: Android has a native toast in React Native core (`ToastAndroid`), but iOS has no system toast, so a native one on iOS needs a library that draws its own view, and the two candidates (`burnt`, `react-native-simple-toast`) last released about 18 and 20 months ago. I kept the agent's own toast.
+
+### Seat shape
+
+Agent drew a seat as one block, rounder at the back (it couldn't read the Figma file in that session), steered to the Figma's seat instead, from a screenshot of the Figma legend, because: the swatch could be improved to represent this shape, more closely to the provided Figma, and it shouldn't be more complicated than the current custom shape.

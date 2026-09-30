@@ -16,19 +16,31 @@ type SeatSwatchProps = {
   size: number;
 };
 
-/** A seat as the seat map and its legend draw it: a block in its tone's colour, rounder at the back. */
+// The parts of the Figma's seat, as shares of its size. The space between them is what they leave.
+const BACK_HEIGHT = 0.74;
+const BACK_RADIUS = 0.18;
+const CUSHION_WIDTH = 0.7;
+const CUSHION_HEIGHT = 0.18;
+
+/**
+ * A seat as the seat map and its legend draw it, in its tone's colour: the Figma's seat, a rounded
+ * back with a narrower cushion under it.
+ */
 export function SeatSwatch({ tone, size }: SeatSwatchProps) {
   return (
-    <View
-      className={tones[tone]}
-      style={{
-        width: size,
-        height: size,
-        borderTopLeftRadius: size * 0.4,
-        borderTopRightRadius: size * 0.4,
-        borderBottomLeftRadius: size * 0.15,
-        borderBottomRightRadius: size * 0.15,
-      }}
-    />
+    <View className="items-center justify-between" style={{ width: size, height: size }}>
+      <View
+        className={tones[tone]}
+        style={{ width: size, height: size * BACK_HEIGHT, borderRadius: size * BACK_RADIUS }}
+      />
+      <View
+        className={tones[tone]}
+        style={{
+          width: size * CUSHION_WIDTH,
+          height: size * CUSHION_HEIGHT,
+          borderRadius: (size * CUSHION_HEIGHT) / 2,
+        }}
+      />
+    </View>
   );
 }
