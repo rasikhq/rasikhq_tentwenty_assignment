@@ -7,8 +7,12 @@ import { useWindowDimensions } from 'react-native';
  */
 export const WIDE_BREAKPOINT = 600;
 
+/** Whether the window is at or above the wide breakpoint. */
+export function useIsWide(): boolean {
+  return useWindowDimensions().width >= WIDE_BREAKPOINT;
+}
+
 /** How many columns of cards fit: one below the wide breakpoint, two above it. */
 export function useColumnCount(): 1 | 2 {
-  const { width } = useWindowDimensions();
-  return width >= WIDE_BREAKPOINT ? 2 : 1;
+  return useIsWide() ? 2 : 1;
 }

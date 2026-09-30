@@ -34,14 +34,22 @@ export function createQueryClient() {
   });
 }
 
+// What reaches the disk: the upcoming list, and the detail of every movie the user has opened
+const persistedQueries: readonly unknown[] = [queryKeys.upcoming()[0], queryKeys.movieDetail(0)[0]];
+
 // The one place that decides what reaches the disk. Later tickets add their queries here. A query whose
 // refetch failed still holds its last data, which stays saved: a failed refresh must not wipe the copy.
 function shouldPersist(query: Query) {
-  return query.state.data !== undefined && query.queryKey[0] === queryKeys.upcoming()[0];
+  return query.state.data !== undefined && persistedQueries.includes(query.queryKey[0]);
 }
 
-// Pages beyond the first few stay in memory only
-function trimForDisk(data: InfiniteData<unknown>): InfiniteData<unknown> {
+function isInfiniteData(data: unknown): data is InfiniteData<unknown> {
+  return typeof data === 'object' && data !== null && 'pages' in data && 'pageParams' in data;
+}
+
+// A list's pages beyond the first few stay in memory only. Any other data is saved as it is.
+function trimForDisk(data: unknown): unknown {
+  if (!isInfiniteData(data)) return data;
   return {
     pages: data.pages.slice(0, PERSISTED_UPCOMING_PAGES),
     pageParams: data.pageParams.slice(0, PERSISTED_UPCOMING_PAGES),

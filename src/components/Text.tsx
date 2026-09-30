@@ -4,6 +4,11 @@ import { Text as NativeText, type TextProps as NativeTextProps } from 'react-nat
 const variants = {
   title: 'font-poppins-medium text-base text-ink',
   cardTitle: 'font-poppins-medium text-lg text-white',
+  heroTitle: 'font-poppins-semibold text-xl text-white',
+  heroSubtitle: 'font-poppins text-sm text-white',
+  body: 'font-poppins text-sm text-ink',
+  chipOnLight: 'font-poppins-medium text-xs text-ink',
+  chipOnDark: 'font-poppins-medium text-xs text-white',
   stateTitle: 'text-center font-poppins-semibold text-lg text-ink',
   stateMessage: 'text-center font-poppins text-sm text-ink',
   banner: 'text-center font-poppins text-xs text-white',

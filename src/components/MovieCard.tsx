@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { imageUrl } from '../api/images';
 import type { Movie } from '../api/types';
@@ -9,11 +9,20 @@ import { Text } from './Text';
 // Clear at the top to dark at the bottom, so the title stays readable on a bright backdrop
 const scrim = ['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.8)'] as const;
 
+type MovieCardProps = {
+  movie: Movie;
+  onPress: () => void;
+};
+
 /** A movie as a large card: the backdrop image with its title over a darkening gradient. */
-export function MovieCard({ movie }: { movie: Movie }) {
+export function MovieCard({ movie, onPress }: MovieCardProps) {
   return (
     // The navy shows while the image loads, and stays when TMDb has no backdrop for the movie
-    <View className="aspect-video overflow-hidden rounded-2xl bg-navy">
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      className="aspect-video overflow-hidden rounded-2xl bg-navy active:opacity-80"
+    >
       {movie.backdropPath && (
         <Image
           source={imageUrl(movie.backdropPath, 'card')}
@@ -33,6 +42,6 @@ export function MovieCard({ movie }: { movie: Movie }) {
           {movie.title}
         </Text>
       </View>
-    </View>
+    </Pressable>
   );
 }

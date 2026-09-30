@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
 
-import type { TmdbMovie, TmdbPage } from '../api/tmdbTypes';
+import type { TmdbMovie, TmdbMovieDetail, TmdbPage } from '../api/tmdbTypes';
 import { server } from './server';
 
 /** The token the app runs with in tests. The fake TMDb only answers requests that carry it. */
@@ -104,4 +104,49 @@ export function stallUpcoming() {
     }),
   );
   return request;
+}
+
+/** A movie's full detail as TMDb sends it from /movie/{id}. A test states only the fields it cares about. */
+export function tmdbMovieDetail(overrides: Partial<TmdbMovieDetail> = {}): TmdbMovieDetail {
+  return {
+    ...tmdbMovie(),
+    release_date: '2021-12-22',
+    overview: 'An overview of the movie.',
+    genres: [],
+    images: { backdrops: [] },
+    ...overrides,
+  };
+}
+
+type ServeMovieDetailOptions = {
+  /** The answer waits until the promise resolves, such as a gate's `opened`. */
+  hold?: Promise<void>;
+  /** The request fails. */
+  fail?: Failure;
+};
+
+/**
+ * Serves TMDb's detail for one movie, with the videos and images the app asks to have appended.
+ * A request without them fails, so a test that shows the detail also proves the app asked for them.
+ */
+export function serveMovieDetail(
+  detail: TmdbMovieDetail,
+  { hold, fail }: ServeMovieDetailOptions = {},
+) {
+  server.use(
+    http.get(`${BASE_URL}/movie/${detail.id}`, async ({ request }) => {
+      await hold;
+      const params = new URL(request.url).searchParams;
+      if (request.headers.get('Authorization') !== `Bearer ${TEST_TOKEN}`) {
+        return HttpResponse.json(invalidKey, { status: 401 });
+      }
+      if (fail !== undefined) {
+        return failureResponse(fail);
+      }
+      if (params.get('append_to_response') !== 'videos,images' || params.get('include_image_language') !== 'en,null') {
+        return HttpResponse.json({ status_code: 0, status_message: 'Invalid request.', success: false }, { status: 400 });
+      }
+      return HttpResponse.json(detail);
+    }),
+  );
 }

@@ -1,5 +1,6 @@
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
-import { useRef, useState, type ReactNode } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -20,12 +21,6 @@ import { recheckConnection } from '../lib/nativeManagers';
 // first one is cheap, so it reports at once
 const viewabilityConfig = { minimumViewTime: 0 };
 
-const renderMovie: ListRenderItem<Movie> = ({ item }) => (
-  <View className="p-2">
-    <MovieCard movie={item} />
-  </View>
-);
-
 export function MovieListScreen() {
   const {
     data: movies,
@@ -40,6 +35,7 @@ export function MovieListScreen() {
   const isOnline = useIsOnline();
   const insets = useSafeAreaInsets();
   const columns = useColumnCount();
+  const navigation = useNavigation();
   // The first movie on screen. A new column count starts a new list, which opens at this movie
   const firstVisibleIndex = useRef(0);
   // The pull-to-refresh spinner belongs to the user's pull, so it doesn't show for a refetch the app starts
@@ -53,6 +49,15 @@ export function MovieListScreen() {
     await refetch();
     setIsRefreshing(false);
   }
+
+  const renderMovie: ListRenderItem<Movie> = useCallback(
+    ({ item }) => (
+      <View className="p-2">
+        <MovieCard movie={item} onPress={() => navigation.navigate('MovieDetail', { movie: item })} />
+      </View>
+    ),
+    [navigation],
+  );
 
   let content: ReactNode;
   if (movies) {
@@ -72,7 +77,7 @@ export function MovieListScreen() {
 
     content = (
       <>
-        {!isOnline && <OfflineBanner />}
+        {!isOnline && <OfflineBanner message="You're offline. Showing saved movies." />}
         <FlashList
           // FlashList keeps the old row sizes when its column count changes, which left a gap between
           // two cards after rotating, so a new column count starts a new list

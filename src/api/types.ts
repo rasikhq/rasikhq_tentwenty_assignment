@@ -9,6 +9,23 @@ export type Movie = {
   backdropPath: string | null;
 };
 
+/** A genre such as Comedy or Crime. */
+export type Genre = {
+  id: number;
+  name: string;
+};
+
+/** A movie as its detail shows it: everything a list shows, and the rest. */
+export type MovieDetail = Movie & {
+  /** "2021-12-22", or null when TMDb has no release date. */
+  releaseDate: string | null;
+  genres: Genre[];
+  /** Empty when TMDb has none. */
+  overview: string;
+  /** TMDb's file paths for the movie's backdrop images, for the image strip. */
+  backdropPaths: string[];
+};
+
 /** One page of a paged TMDb list. */
 export type Paged<T> = {
   items: T[];

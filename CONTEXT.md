@@ -14,11 +14,18 @@ _Avoid_: Home, feed, Watch screen
 The movies the app kept on the device from its last successful load, shown when TMDb can't be reached.
 _Avoid_: Cached movies, offline movies
 
+**Movie detail**:
+The screen for one movie: its image and title at once, then the release line, genre chips, overview and a strip of images. Movies the user has opened stay available offline.
+_Avoid_: Details page, movie page
+
+**Release line**:
+The movie detail's line under the title: "In Theaters <date>" for a bookable movie, "Released <date>" for any other.
+
 **Offline banner**:
-A slim note above saved movies saying the user is offline and the screen shows saved movies.
+A slim note above saved movies, or a saved movie detail, saying the user is offline and the screen shows saved data.
 
 **Offline state**:
-The full-screen message, with Retry, shown offline when there are no saved movies to show.
+The message, with Retry, that takes a screen's content area offline when nothing is saved to show there.
 
 ### Movies
 
