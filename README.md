@@ -6,7 +6,7 @@ This README is a stub for now. The full version comes with the release.
 
 ## Requirements
 
-- Node 20.19.4 or newer, with npm
+- Node 22 (22.13 or newer) or Node 24 and later, with npm
 - iOS: Xcode with an iOS simulator
 - Android: Android Studio with SDK 36, an emulator, and JDK 17
 
@@ -35,3 +35,9 @@ npm run android   # the same for a running Android emulator
 ```
 
 After the first build, `npm start` is enough: it starts Metro, and pressing `i` or `a` opens the installed build. When a native dependency or `app.json` changes, run `npx expo prebuild --clean` and build again.
+
+## Check
+
+```bash
+npm run check     # typecheck, lint and tests, the same command CI runs
+```

@@ -1,3 +1,12 @@
+// process.env values are `any` otherwise, which type-aware lint rejects
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      EXPO_PUBLIC_TMDB_TOKEN?: string;
+    }
+  }
+}
+
 /**
  * The TMDb API Read Access Token, inlined from EXPO_PUBLIC_TMDB_TOKEN when the app is bundled.
  * A missing token throws setup instructions here, instead of surfacing later as TMDb's 401.
